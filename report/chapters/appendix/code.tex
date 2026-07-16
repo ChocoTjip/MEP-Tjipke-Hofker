@@ -1,0 +1,305 @@
+\begin{appendices}
+\renewcommand{\theequation}{A\arabic{equation}}
+\section{Model Codes}
+
+\subsection{Code Model 1}
+Deze vul ik even later in\dots
+
+\subsection{Code Model 2}
+    
+Import Packages; generate grid; define constants:
+\begin{lstlisting}
+using Ferrite, SparseArrays, WriteVTK, Plots
+name = "absorption_diffusion_convection_1d";
+
+# Stop time, time step
+dt = .005;
+T = 1.3;
+k = 2.0;         # rate of absorption
+rho_sat = 1.0;   # saturation density of metal
+vx = 1.5;        # x-velocity for convection
+vy = 0.0;        # y-velocity for convection
+velocity = vx;   # total velocity 
+D = 0.1;         # Diffusivity for diffusion
+n_grid = 100;    # number of grid points
+
+# generates n_grid gridpoints between 0 and 1
+grid = generate_grid(Line, (n_grid,), Vec((0.0,)), Vec((1.0,)))
+
+# generate the same 
+qr = QuadratureRule{RefLine}(2);
+
+ip_rho = Lagrange{RefLine, 1}();
+cellvalues_rho = CellValues(qr, ip_rho);
+
+ip_rhos = Lagrange{RefLine, 1}()
+cellvalues_rhos = CellValues(qr, ip_rhos);
+
+# degree of freedom handler, 
+dh = DofHandler(grid)
+add!(dh, :rho, ip_rho)
+add!(dh, :rho_s, ip_rhos)
+close!(dh);
+\end{lstlisting}
+Constraint handler for boundary condition enforcement:
+\begin{lstlisting}
+# for now we have no constraints
+ch = ConstraintHandler(dh)
+
+#create left_slit
+dbc_left = Dirichlet(
+    :rho,
+    getfacetset(grid, "left"),
+    (x, t) -> 1.0
+)
+
+add!(ch, dbc_left)
+close!(ch)
+update!(ch, 0.0)
+\end{lstlisting}
+\begin{equation}
+    M_{ij} = \int_{\Omega} \phi_i \phi_j d\Omega
+\end{equation}
+\begin{lstlisting}
+function doassemble_M!(M, cellvalues_rho, cellvalues_rhos, dh)
+    assembler = start_assemble(M)
+
+    # number of basis functions per field
+    n_basefuncs_rho  = getnbasefunctions(cellvalues_rho)
+    n_basefuncs_rhos = getnbasefunctions(cellvalues_rhos)
+
+    # loop over all cells
+    for cell in CellIterator(dh)
+        # get global DOFs for this cell
+        cell_dofs = celldofs(cell)
+        ndofs_cell = length(cell_dofs)
+        Me = zeros(ndofs_cell, ndofs_cell)
+
+        # rho
+        reinit!(cellvalues_rho, cell)
+        for q in 1:getnquadpoints(cellvalues_rho)
+            dx = getdetJdV(cellvalues_rho, q)
+            for i in 1:n_basefuncs_rho
+                psi_i = shape_value(cellvalues_rho, q, i)
+                for j in 1:n_basefuncs_rho
+                    psi_j = shape_value(cellvalues_rho, q, j)
+                    # :rho DOFs are first in cell_dofs
+                    Me[i, j] += psi_i * psi_j * dx
+                end
+            end
+        end
+
+        # rhos
+        reinit!(cellvalues_rhos, cell)
+        for q in 1:getnquadpoints(cellvalues_rhos)
+            dx = getdetJdV(cellvalues_rhos, q)
+            for i in 1:n_basefuncs_rhos
+                psi_i = shape_value(cellvalues_rhos, q, i)
+                for j in 1:n_basefuncs_rhos
+                    psi_j = shape_value(cellvalues_rhos, q, j)
+                    # :rho_s DOFs are after :rho in cell_dofs
+                    offset = n_basefuncs_rho
+                    Me[offset + i, offset + j] += psi_i * psi_j * dx
+                end
+            end
+        end
+
+        assemble!(assembler, cell_dofs, Me)
+    end
+
+    return M
+end
+\end{lstlisting}
+\begin{equation}
+    K_{ij} = \int_{\Omega} \nabla \phi_i \cdot \nabla \phi_j d\Omega
+\end{equation}
+\begin{lstlisting}
+function doassemble_K!(
+    K::SparseMatrixCSC, 
+    cellvalues_rho::CellValues, 
+    cellvalues_rhos::CellValues, 
+    dh::DofHandler
+    )
+
+    assembler = start_assemble(K)
+
+    # number of basis functions per field
+    n_basefuncs_rho  = getnbasefunctions(cellvalues_rho)
+    n_basefuncs_rhos = getnbasefunctions(cellvalues_rhos)
+
+    for cell in CellIterator(dh)
+
+        # get global DOFs for this cell
+        cell_dofs = celldofs(cell)
+        ndofs_cell = length(cell_dofs)
+        Ke = zeros(ndofs_cell, ndofs_cell)
+
+        # rho is the only important bit since rho_s does not diffuse
+        reinit!(cellvalues_rho, cell)
+
+        for q_point in 1:getnquadpoints(cellvalues_rho)
+            dx = getdetJdV(cellvalues_rho, q_point)
+
+            for i in 1:n_basefuncs_rho
+                dpsi_i = shape_gradient(cellvalues_rho, q_point, i)
+
+                for j in 1:n_basefuncs_rho
+                    dpsi_j = shape_gradient(cellvalues_rho, q_point, j)
+                    # D∫ (∇ψ^i) ⋅ (∇ψ^j)dx
+                    Ke[i, j] += D * (dpsi_j ⋅ dpsi_i) * dx
+                end
+            end
+        end
+
+        assemble!(assembler, cell_dofs, Ke)
+    end
+
+    return K
+end
+\end{lstlisting}
+\begin{equation}
+    C_{ij} = -v\int_{\Omega} \phi_i \nabla \phi_j d\Omega
+\end{equation}
+\begin{lstlisting}
+function doassemble_C!(
+    K::SparseMatrixCSC, 
+    cellvalues_rho::CellValues, 
+    cellvalues_rhos::CellValues, 
+    dh::DofHandler
+    )
+
+    n_basefuncs_rho = getnbasefunctions(cellvalues_rho)
+    Ce = zeros(n_basefuncs_rho, n_basefuncs_rho)
+
+    assembler = start_assemble(C)
+
+    for cell in CellIterator(dh)
+        
+        # get global DOFs for this cell
+        cell_dofs = celldofs(cell)
+        ndofs_cell = length(cell_dofs)
+        Ce = zeros(ndofs_cell, ndofs_cell)
+
+        # rho is the only important bit since rho_s does not diffuse
+        reinit!(cellvalues_rho, cell)
+        fill!(Ce, 0)
+
+        for q_point in 1:getnquadpoints(cellvalues_rho)
+            dx = getdetJdV(cellvalues_rho, q_point)
+
+            for i in 1:n_basefuncs_rho
+                psi_i = shape_value(cellvalues_rho, q_point, i)
+
+                for j in 1:n_basefuncs_rho
+                    dpsi_j = shape_gradient(cellvalues_rho, q_point, j)
+                    # -v \psi^i(\partial_x\psi^j)dx
+                    Ce[i, j] += (velocity ⋅ dpsi_j) *  psi_i * dx
+                end
+            end
+        end
+        assemble!(assembler, cell_dofs, Ce)
+    end
+
+    return C
+end    
+\end{lstlisting}
+Generate the mass, stiffness and convection matrices:
+\begin{lstlisting}
+M = allocate_matrix(dh);
+K = allocate_matrix(dh);
+C = allocate_matrix(dh);
+
+M = doassemble_M!(M, cellvalues_rho, cellvalues_rhos, dh);
+K = doassemble_K!(K, cellvalues_rho, cellvalues_rhos, dh);
+C = doassemble_C!(C, cellvalues_rho, cellvalues_rhos, dh);
+\end{lstlisting}
+For the ImEx method:
+\begin{equation}
+    \underbrace{\left(M + \Delta t(K+C)\right)}_{=A} \rho^{n+1} = M \rho^n + M\dot{\mathbf{m}}_h^n(\mathbf{u}^n)\Delta t
+\end{equation}
+Also we define the LU factorization of the left-hand side matrix for faster computation of the inverse:
+\begin{lstlisting}
+A = M + dt .* (K+C);
+A_fact = lu(A);
+\end{lstlisting}
+Make the right-hand side vector; apply bcs; define global dofs for $\rho$ and $\rho_s$ for mass absorption calculation:
+\begin{lstlisting}
+ndofs_total = ndofs(dh)
+u_n = zeros(ndofs_total)
+apply!(u_n, ch)
+
+rhsdata = get_rhs_data(ch, A);
+apply!(A, ch);
+
+# find global dofs for rho and rho_s for mass absorption calculation
+rho_dofs  = Int[]
+rhos_dofs = Int[]
+
+for cell in CellIterator(dh)
+    cdofs = celldofs(cell)
+
+    append!(rho_dofs,  cdofs[dof_range(dh, :rho)])
+    append!(rhos_dofs, cdofs[dof_range(dh, :rho_s)])
+end
+
+rho_dofs  = unique(rho_dofs);
+rhos_dofs = unique(rhos_dofs);
+
+# for savind and plotting
+steps_n = length(dt:dt:T)
+u_hist = zeros(steps_n, ndofs_total)
+\end{lstlisting}
+Main time loop:
+\begin{lstlisting}
+mdot = zeros(ndofs_total)
+# A_fact = lu(A)
+
+# finally the timeloop
+for (step, t) in enumerate(dt:dt:T)
+    
+    #First of all, we need to update the Dirichlet boundary condition values.
+    update!(ch, t)
+
+
+    # now we reset ̇m.
+    mdot = zeros(ndofs_total)
+
+    # important: because of our assumptions above, we iterate over degrees of freedom/nodes, not cells
+    # the cell relavance will be added after M*mdot
+    for (i_rho, i_rhos) in zip(rho_dofs, rhos_dofs)
+
+        # for now: mdto = kρ(ρsat-ρs)
+        md = k * u_n[i_rho] * (rho_sat - u_n[i_rhos])
+
+        mdot[i_rhos] += md
+        mdot[i_rho]  -= md
+    end
+
+    # b without boundary elements
+    b = M * u_n  + dt * (M * mdot)
+
+    #Then, we can apply the boundary conditions of the current time step.
+    apply_rhs!(rhsdata, b, ch)
+
+    #Finally, we can solve the time step and save the solution afterwards.
+    u = A \ b
+
+    
+    VTKGridFile(joinpath(name, "$(name)-$step"), dh) do vtk
+        write_solution(vtk, dh, u)
+        pvd[t] = vtk
+    end
+    #At the end of the time loop, we set the previous solution to the current one and go to the next time step.
+    u_n .= u
+    u_hist[step, :] .= u_n
+
+end    
+\end{lstlisting}
+
+\subsection{Code Model 3}
+
+\subsection{Code Model 4}
+
+\subsection{Code Model 5}
+
+\end{appendices}

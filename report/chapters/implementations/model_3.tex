@@ -1,0 +1,152 @@
+\subsection{Model 3: 2D model with predetermined flow speed}
+
+This part is meant to combine absorption, diffusion, and convection shown into a 2D model. The shape of the model is given in Figure~\ref{fig:model_3_domain}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{figures/model_3_domain.png}
+    \caption{The domain of the 2D model. The domain is $\Omega$. 
+    The boundary $\partial\Omega_1$ is for the inlet of the battery.}\label{fig:model_3_domain}
+    The boundary $\partial\Omega_2$ is for the insulating boundary. 
+\end{figure}
+
+The goal is to solve for:
+
+\begin{equation}
+\left\{\begin{aligned}
+    \partial_t\rho&= D(\Delta\rho)-\mathbf{v}\cdot(\nabla\rho)-\dot m_a(\rho, \rho_s) \\
+    \partial_t\rho_s&=\dot m_a(\rho, \rho_s)
+\end{aligned}\right.
+\end{equation}
+Where $\rho$ is the density at that point and $\rho_s$ is the saturation of the metal. $D$ is the diffusivity, and $\mathbf{v}$ the velocity ($\mathbf v=(v_x, v_y)$).
+
+Under initial condition and boundary conditions are (since there is no coupling effects of saturation of the metal I am pretty sure we do not need boundary conditions there, but I'll look into this and phrase it more rigorous):
+
+\begin{equation}
+\left\{ \begin{aligned}
+    \rho(\mathbf{x}, 0)  &= 0, &\forall \mathbf{x}\in \Omega,\\
+    \rho_s(\mathbf{x},0) &= 0, &\forall \mathbf{x}\in \Omega,\\
+    \rho(\mathbf{x}, t)  &= 1, &\forall \mathbf{x}\in\partial\Omega_1,\forall t\geq 0, \\
+    \partial_\mathbf{n}\rho(\mathbf{x}, t)  &= 0, &\forall \mathbf{x}\in\partial\Omega_2,\forall t\geq 0. \\
+\end{aligned}\right.
+\end{equation}
+
+where $\mathbf x = (x, y)$. The function for calculating adsorption is simplified into (as per model 1):
+
+\begin{equation*}
+\dot m(\rho, \rho_s) = k\rho(\rho_{sat}-\rho_s)
+\end{equation*}
+
+We will be expanding $\rho$, $\rho_s$, and $\dot m$ (the values at their respective timesteps) into Lagrange polynomials:
+
+\begin{equation*}
+\begin{aligned}
+\rho&=\sum{\rho^{i}\psi^i},\\
+\rho_s&=\sum{\rho_s^{i}\psi^i},\\
+\dot m&=\sum{\dot m^{i}\psi^i}.
+\end{aligned}
+\end{equation*}
+
+where $\psi^i$ are the basis functions. We want to solve for $\rho$ and $\rho_s$, so our solution vector $\mathbf{u}$ becomes:
+
+\begin{equation*}
+\mathbf{u} = \begin{pmatrix}\rho^{n, 1} \\ \vdots \\ \rho^{n, N} \\ \rho_s^{n, 1} \\ \vdots \\ \rho_s^{n, N}
+\end{pmatrix}
+\end{equation*}
+
+We also define the vector $\mathbf{\dot{m}}$ by the coefficients of the absorption:
+
+\begin{equation*}
+\mathbf{\dot{m}}_h =\begin{pmatrix}
+m^{1}\\ \vdots \\ m^{N}
+\end{pmatrix},\\
+\end{equation*}
+
+\subsubsection*{Diffusion}
+We apply finite element methods to the diffusion, by multiplying the diffusion equation with a test function $q$ and integrating over the domain $\Omega$:
+\begin{equation*}
+\begin{aligned}
+\int q(\Delta\rho)da &= \int q(\partial_{xx}+\partial_{yy})\rho da \\
+&= \int_{\delta\Omega_1\cup\delta\Omega_3}q(\partial_x\rho) dy\bigg|_{x=0}^1+\int_{\delta\Omega_2\cup\delta\Omega_4}q(\partial_y\rho) dx\bigg|_{y=0}^1\\
+&\quad -\int (\partial_x\rho)(\partial_xq)da-\int (\partial_y\rho)(\partial_y q)da \\
+&= -\int_{\delta\Omega_1}q(\partial_x\rho) dy\bigg|_{x=0}-\int (\nabla\rho)\cdot(\nabla q)da
+\end{aligned}
+\end{equation*}
+
+where the boundary condition for the right, top, and bottom parts are substituted to get rid of a lot of the boundary mess, the dirichlet boundary at the left hand side will be enforced with a constraint handler (so we will ignore it from now on in the theory section). Now if we change test function $q$ with $\psi^j$ we can write the diffusion equation in its semi-discrete form:
+
+\begin{equation*}
+    \begin{aligned}
+        D\int \psi^j(\Delta\rho)da &= -D \sum_i \int (\nabla \psi^i)\cdot(\nabla\psi^j)da \,\,\rho^i \\
+        \implies 
+        D\begin{pmatrix}
+            \int \psi^1(\Delta\rho)da \\
+            \vdots \\
+            \int \psi^N(\Delta\rho)da
+        \end{pmatrix}&= K\mathbf{u}\\
+    \end{aligned}
+\end{equation*}
+with
+\begin{equation}\label{eq:diffusion_matrix}
+K_{ij}=D\int (\nabla \psi^i)\cdot(\nabla\psi^j)dx
+\end{equation}
+
+\subsubsection*{Convection}
+Multiplying the convection term with a test function $q$ and integrating over the domain $\Omega$ gives:
+
+\begin{equation*}
+    \begin{aligned}
+        -\int \psi^j(\mathbf{v}\cdot\nabla\rho)da &= -\sum_i \int (\mathbf{v}\cdot\nabla\psi^i)\psi^j da \,\,\rho^i \\
+        \implies 
+        -\begin{pmatrix}
+            \int \psi^1(\mathbf{v}\cdot\nabla\rho)da \\
+            \vdots \\
+            \int \psi^N(\mathbf{v}\cdot\nabla\rho)da
+        \end{pmatrix}&= C\mathbf{u}\\
+    \end{aligned}
+\end{equation*}
+where
+\begin{equation}\label{eq:convection_matrix}
+C_{ij}=\int (\mathbf{v}\cdot\nabla\psi^i)\psi^j da
+\end{equation}
+is our convection matrix. We could also do another integration by parts for the convection term, but this would lead to a different convection matrix, and we would have to enforce the dirichlet boundary condition on the left hand side. This is not a problem, but I think it is easier to just use the above formulation.
+
+\subsubsection*{Absorption}
+In the same method as in the previous model, we multiply the $\dot{m}_a$ term with a test function $\psi^j$ and substitute our expansions. We then obtain the weak form
+\begin{equation*}
+    \int_\Omega \dot{m}_a(\rho,\rho_s)\,\psi^j\,da
+    = \int_\Omega \left(\sum_i \dot m^i\psi^i\right)\psi^j\,da
+    = \sum_i \dot m^i \int_\Omega \psi^i\psi^j\,da
+    = \sum_i M_{ji}\,\dot m^i,
+\end{equation*}
+where $M_{ji}=\int_\Omega\psi^i\psi^j\,dx$ is the mass matrix, and using the relation between $\dot m^i$ and the nodal values of $\rho,\rho_s$ (from Equation~\ref{eq:model_1_mdot}) yields the discrete absorption contribution:
+\begin{equation*}
+    \dot{m}^i = k\rho^i(\rho_{sat}-\rho_s^i).
+\end{equation*}
+
+
+\subsubsection*{Time integration}
+Now our semi-discrete system of equations becomes:
+\begin{equation*}
+\begin{aligned}
+    M \partial_t \mathbf{u} &= L\mathbf{u}+M\mathbf{\dot m}_h(\mathbf{u})
+\end{aligned}
+\end{equation*}
+Where $L=D K-C$ is the linear operator matrix. Now we can apply time integration methods to solve this semi-discrete system of equations, as discussed in Section~\ref{subseq:time_integrations}.
+
+% BLAH
+
+if we discretize and apply IMEX methods (now a combination between implicit and explicit methods as discussed in the previous sections) we get:
+
+\begin{equation*}
+\big[M+\big( K+C\big) \Delta t \big]\mathbf{u}^{n+1}=M\big[ \mathbf u^n + \mathbf{\dot m}_h^n(\mathbf{u}^n)\, \Delta t\big]
+\end{equation*}
+
+Where we have again:
+
+\begin{equation*}
+M_{ij}=\int \psi^i\psi^j dx,\\
+C_{ij}=\int (\mathbf{v}\cdot\nabla\psi^i)\psi^j \,dx,\\
+K_{ij}=\int (\nabla \cdot \psi^i)(\nabla \cdot \psi^j)\, dx \\
+A_{ij}=M_{ij}+\big( K_{ij}+C_{ij}\big) \Delta t
+\end{equation*}

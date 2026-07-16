@@ -1,0 +1,222 @@
+\subsection{Model 4: 1D Modelled flow with pressure based absorption}
+In this section we will be modelling the flow together with pressure as described in Section~\ref{subsec:flow_model}. The model will have diffusion of hydrogen gas and convection with a flow speed that is calculated from the pressure. The battery will be on the domain $\Omega = (0,L)$, where $L$ is the length of the battery, so the domain is the same as in Figure~\ref{fig:model_2_domain}. The left boundary will be the inflow of hydrogen gas, and the right boundary will be the outflow of hydrogen gas. Since we now also model the pressure we can assume pure hydrogen gas everywhere, and adjust the gas absorption with its intended pressure dependency. It also assumes constant temperature, and ideal gas law: $p=\rho_g RT$. The model also takes into account viscous dissipation of a poreous medium. It is summarized in the following system of equations:
+\begin{subequations}\label{eq:model_4_governing_equations}
+    \begin{align}
+    \rho_g \partial_t v &=-RT\partial_x\rho_g-\rho_g v \partial_x v+\mu\partial_x^2 v -S \label{eq:model_4_v}\\
+    \partial_t\rho_g&=-(\partial_x \rho_g)v-\rho_g (\partial_x v) + \mu_\epsilon\partial_x^2\rho_g-\dot m \label{eq:model_4_rhog}\\
+    \partial_t \rho_s &= \dot m \label{eq:model_4_rhos}
+    \end{align}
+\end{subequations}
+
+Where $\rho_g$ is the density of H2 in the air, now seen as a true density, instead of a ratio. $\rho_s$ is the amount of hydrogen in the solid Metal Organic Framework, $v$ is the flow speed, $\mu$ is the viscosity of the gas, and $\mu_\epsilon$ is the diffusion coefficient, this is required numerically to avoid instabilities and oscilations (even when using upwind schemes). The absorption and viscous dissipation are given by:
+\begin{align}
+    \dot m &= A\log(\frac{p_g}{p_{eq,a}})(\rho_{sat}-\rho_s)\\
+    S &= \frac{\mu}{K}v
+\end{align}
+under IC:
+\begin{equation}
+\left\{ \begin{aligned}
+\rho_g(x,0) &= 1 \\
+v(x,0) &= 0
+\end{aligned}\right.
+\end{equation}
+(the solid doesn't need a boundary condition since it is not really coupled to its surroundings), and BC:
+\begin{equation}
+\left\{\begin{aligned}
+    v(L,t) &= 0\\
+\rho_g(0,t) &= 2-e^{-10t} \\
+\partial_x v(0,t) &= 0 \\
+\end{aligned}\right.
+\end{equation}
+where we use a steep increase in density at the inlet to simulate a step function, since a discontinuity gives extremely low initial time steps. The BC for the velocity is a no-slip condition at the outlet, and a zero gradient at the inlet. 
+
+We will expand $\rho_g$, $\rho_s$, and $v$ as:
+\begin{equation*}
+    \begin{aligned}
+         v(x,t) &= \sum_j v^j(t) \phi^j(x) \\
+    \rho_g(x,t) &= \sum_i \rho_{g}^i(t) \phi^i(x) \\
+    \rho_s(x,t) &= \sum_i \rho_{s}^i(t) \phi^i(x) \\
+    \end{aligned}
+\end{equation*}
+with our solutionvector:
+
+\begin{equation*}
+    \mathbf u = \begin{pmatrix}\mathbf{v}\\\boldsymbol{\rho}_g\\\boldsymbol{\rho}_s\end{pmatrix} = \begin{pmatrix}
+        v^1        \\ \vdots \\ v^{N_2}      \\
+        \rho_{g}^1 \\ \vdots \\ \rho_{g}^{N_1} \\ 
+        \rho_{s}^1 \\ \vdots \\ \rho_{s}^{N_1} \\ 
+    \end{pmatrix}
+\end{equation*}
+
+we will also need an expansion of the mass transfer term:
+\begin{equation}
+    \dot m(x,t) = \sum_i \dot m^i(t) \phi^i(x)
+\end{equation}
+which we will approximate at the terms using our knowledge that on nodes the only non-zero basis function is the one corresponding to that node, so we can approximate the mass transfer term as:
+\begin{equation}
+    \dot m^i(t) = A_a\log\left(\frac{RT \rho_g^i(t)}{p_{eq,a}}\right)(\rho_{sat}-\rho_s^i(t))
+\end{equation}
+and again we use bold notation for the vector of mass transfer terms:
+\begin{equation*}
+    \dot{\mathbf{m}} = \begin{pmatrix}
+        \dot m^1 \\ \vdots \\ \dot m^{N_1}
+    \end{pmatrix}
+\end{equation*}
+
+\subsubsection*{velocity}
+If we look at at the left hand side of Equation~\ref{eq:model_4_v} and multiply by test functions $\phi^k$, integrate and expand as above, we get:
+
+\begin{equation}
+    M_v(\mathbf{u})\dot{\mathbf{u}} = \sum_j\left(\sum_i\rho_i\int_\Omega \phi^i\phi^j\phi^k\,dx\right)(\partial_t \mathbf{u})
+\end{equation}
+where row $k$ and column $j$ correspond to:
+
+\begin{equation*}
+    (M_v)_{kj} = \sum_i\rho_i\int \phi^i\phi^j\phi^k\,dx
+\end{equation*}
+I plan on precalculating the integrals into a tensor:
+
+\begin{equation*}
+    T_{ijk} = \int \phi^i\phi^j\phi^k\,dx
+\end{equation*}
+simplifying:
+\begin{equation*}
+(M_v)_{kj}=\sum_i {\rho_i}T_{ijk}
+\end{equation*}
+For the RHS of the first equation we get (after integration and multiplying by $\phi^k$) term for term:
+
+\begin{equation*}
+\begin{aligned}
+    {(P\boldsymbol{\rho})}_k &= -RT\sum_i\left(\int \phi^k\phi^i\,dx\right)\rho_i \\
+    {(D\mathbf{v})}_k &= -\mu\sum_i\left(\int\partial_x\phi^k\partial_x\phi^i\,dx\right) v_i 
+    % & \text{negative sign due to integration by parts}
+    \\
+    {(S\mathbf{v})}_k &= -\frac{\mu}{K}\sum_i\left(\int \phi^k\phi^i \, dx \right)v_i
+\end{aligned}
+\end{equation*}
+
+For the convection term we have:
+\begin{equation*}
+    {(C_{v})}_k = \int_\Omega \phi^k \rho_g v \partial_x v \, dx
+\end{equation*}
+which we will approximate using a quadrature rule. Combining all gives us:
+
+\begin{equation}
+    M_v(\boldsymbol{\rho}) \dot{\mathbf{v}}=P\boldsymbol{\rho}+D\mathbf{v}+S\mathbf{v}+C_{v}(\mathbf{v},\boldsymbol{\rho})
+\end{equation}
+
+\subsubsection*{Density}
+For Equation~\ref{eq:model_4_rhog} we look at the conservation of mass (the LHS of the equation):
+\begin{equation*}
+\sum_i\left(\int\phi^i\phi^k\,dx\right)(\partial_t\rho_i)={(M_\rho\dot{\mathbf{u}})}_k
+\end{equation*}
+and the first term in the RHS, our convection of density, becomes:
+\begin{equation*}
+    {(C_{\rho_g}(\mathbf{u}))}_k = -\int\phi^k\partial_x(\rho v)dx = -{\left[ \phi^k\rho v\right]}_{x\in\delta\Omega}+\int(\partial_x\phi^k)v \rho\, dx
+\end{equation*}
+Where we can see that the boundary at $x=L$ becomes $0$ due to the boundary condition on the velocity there, but at $x=0$ we can not discard the term since we have non-zero velocity and pressure, and not a Dirichlet condition on the 
+
+The diffusion familiarly becomes:
+\begin{equation*}
+    \mu_\epsilon\sum_i\left(\int\partial_x\phi^k\partial_x\phi^i\,dx\right) \rho_i = D_\epsilon \mathbf{\rho}
+\end{equation*}
+The mass transfer term is given by:
+\begin{equation*}
+\begin{aligned}
+    -\int\phi^k\dot m dx &= -\int \phi^k \sum_i \dot m^i(t) \phi^i(x) dx \\
+    &= -\sum_i \dot m^i(t) \int \phi^k \phi^i dx \\
+    &= -M_{{\rho_g}} \dot{\mathbf{m}}
+\end{aligned}
+\end{equation*}
+where:
+\begin{equation*}
+    \dot{m}^i = A_a\log\left(\frac{RT \rho_g^i(t)}{p_{eq,a}}\right)(\rho_{sat}-\rho_s^i(t))
+\end{equation*}
+which we can summarize by:
+\begin{equation}
+M_{\rho_g}\dot{\boldsymbol{\rho}}_g=C_{\rho_g}(\mathbf{u})+D_\epsilon \boldsymbol{\rho}_g-M_{{\rho_g}}\dot{\mathbf{m}}(\mathbf{u})
+\end{equation}
+
+Since the density for the solid is only affected by the mass transfer term, we get from equation~\ref{eq:model_4_rhos}:
+\begin{equation}
+    M_{\rho_s}\dot{\boldsymbol{\rho}}_s = M_{{\rho_s}}\dot{\mathbf{m}}(\mathbf{u})
+\end{equation}
+
+\subsubsection*{Semi-Discrete form}
+If we combine all above we get the following semi-discrete form of the system of equations:
+\begin{equation}
+\begin{aligned}
+M_v(\boldsymbol{\rho}_g)\dot{\mathbf{v}}&=C_v(\mathbf{u})+P\boldsymbol{\rho}_g+D\mathbf{v} + S\mathbf{v}\\
+M_{\rho_g}\dot{\boldsymbol{\rho}}_g&=C_{\rho_g}(\mathbf{u})+D_\epsilon \boldsymbol{\rho}_g-M_{{\rho_g}}\dot{\mathbf{m}}(\mathbf{u})\\
+M_{\rho_s}\dot{\boldsymbol{\rho}}_s&=M_{{\rho_s}}\dot{\mathbf{m}}(\mathbf{u})
+\end{aligned}
+\end{equation}
+which can be summarized into:
+\begin{equation}\label{eq:model_4_semi_discrete}
+    M(\mathbf{u})\dot{\mathbf{u}} = L[\mathbf{u}]+N(\mathbf{u}),
+\end{equation}
+where:
+\begin{equation}
+    \begin{aligned}
+    M(\mathbf{u}) &= \begin{pmatrix}
+    M_v(\boldsymbol{\rho}_g) & 0 & 0 \\
+    0 & M_{\rho_g} & 0 \\
+    0 & 0 & M_{\rho_s}
+    \end{pmatrix}, \\
+    L &= \begin{pmatrix}
+        D+S & P & 0 \\
+        0 & D_\epsilon & 0 \\
+        0 & 0 & 0
+    \end{pmatrix}, \\
+    N(\mathbf{u}) &= \begin{pmatrix}C_v(\mathbf{u}) \\ C_{\rho_g}(\mathbf{u}) \\ 0\end{pmatrix}+M_m\begin{pmatrix}
+    0 \\ -\dot{\mathbf{m}}(\mathbf{u}) \\ \dot{\mathbf{m}}(\mathbf{u})
+    \end{pmatrix}, \\
+    M_m &= \begin{pmatrix}
+    0 & 0 & 0 \\
+    0 & M_{{\rho_g}} & 0 \\
+    0 & 0 & M_{{\rho_s}}
+    \end{pmatrix}.
+\end{aligned} 
+\end{equation}
+
+\subsubsection*{IMEX Scheme}
+To apply the IMEX scheme, we use a similar approach as done in Section~\ref{subseq:model_2}. We take all linear parts implicit, and non-linear parts explicit, and apply forward Euler. This gives the following time-integration based on Equation~\ref{eq:model_4_semi_discrete}:
+\begin{equation}
+    A(\mathbf{u}^n)\mathbf{u}^{n+1} = B(\mathbf{u}^n)\mathbf{u}^{n} + N(\mathbf{u}^n)
+\end{equation}
+where:
+\begin{align}
+    A(\mathbf{u}^n) &= \begin{pmatrix}
+    \frac{M_v(\boldsymbol{\rho}_g^n)}{\Delta t}-D-S & -P & 0 \\ 
+    0 & \frac{M_{\rho_g}}{\Delta t}-D_\epsilon & 0 \\
+    0 & 0 & \frac{M_{\rho_s}}{\Delta t}
+    \end{pmatrix}, \\
+    B(\mathbf{u}^n) &= \begin{pmatrix}
+    \frac{M_v(\boldsymbol{\rho}_g^n)}{\Delta t} & 0 & 0 \\
+    0 & \frac{M_{\rho_g}}{\Delta t} & 0 \\
+    0 & 0 & \frac{M_{\rho_s}}{\Delta t}
+    \end{pmatrix}, \\
+    N(\mathbf{u}^n) &= \begin{pmatrix}
+    C_v(\mathbf{u}^n) \\ C_{{\rho}_g}(\mathbf{u}^n)-M_{{\rho_g}}\dot{\mathbf{m}}(\mathbf{u}^n) \\ M_{{\rho_s}}\dot{\mathbf{m}}(\mathbf{u}^n)
+    \end{pmatrix}
+\end{align}
+After applying this scheme we get the 
+
+\subsubsection*{Julia Solver}
+For the Julia solver we need to define an equation of the form $A(\mathbf{u}^n)\dot{\mathbf{u}} = \mathbf{rhs}(\mathbf{u})$. From Equation~\ref{eq:model_4_semi_discrete} we can immediately see that:
+
+\begin{align}
+    A(\mathbf{u}) &= M(\mathbf{u}) \\
+    \mathbf{rhs}(\mathbf{u}) &= L[\mathbf{u}]+N(\mathbf{u})
+\end{align}
+Julia then automatically applies pre-defined schemes that also use adjustable time steps.
+
+\subsubsection*{Total pressure}
+As described in Section~\ref{subsec:flow_model}, we can calculate the total pressure at a certain point as:
+\begin{equation}
+    p_{tot}(x,t) = p_{v}+RT\rho_g(x,t) = \frac{1}{2}\rho_g(x,t)v^2(x,t)+RT\rho_g(x,t)
+\end{equation}
+Where $p_v$ is the pressure due to the velocity of the gas. We can set this boundary to any function we want to, say $2-e^{-10t}$ (to simulate a quick increase to a total pressure of $2$). This is a more physical boundary condition than setting the density to a certain value, since it takes into account the velocity of the gas. We can then calculate the density at the inlet as (and this we apply for the boundary condition):
+\begin{equation}
+    \rho_g(0,t) = \frac{2-e^{-10t}}{\frac{1}{2}v^2(0,t)+RT} = 2
+\end{equation}

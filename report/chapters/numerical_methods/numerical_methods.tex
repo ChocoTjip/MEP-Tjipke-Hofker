@@ -1,0 +1,17 @@
+\section{Numerical Methods}\label{sec:numerical_methods}
+
+In this section we will be looking at the numerical methods used to solve the PDE's given in the previous section. 
+
+A time-dependent partial differential equation is first discretized in space, resulting in a semi-discrete system of ordinary differential equations (or differential-algebraic equations). The spatial discretization may be performed using methods such as the Finite Difference Method, the Finite Volume Method, or the Finite Element Method. Subsequently, a time integration method is employed to obtain the fully discrete solution.
+
+In the Sections~\ref{subseq:finite_element_methods}, and~\ref{subsec:finite_differences} we will be looking at the spacial discretization using Finite Differences, and Finite Element Methods respectively. They both tackle the problem of discretizing an equation in the following (continuous) form (with appropriate boundary and initial conditions):
+\begin{equation}\label{eq:general_pde_numerical_methods}
+    \mathcal{M}(u)\partial_t u = \mathcal{L}(u)+\mathcal{N}(u),
+\end{equation}
+where $u(x,t)$ is the variable we try to solve, $\mathcal{M}$ the weight or mass function, $\mathcal{L}$ a linear operator, and $\mathcal{N}$ a non-linear operator. The discretization of this equation leads to a semi-discrete system of ordinary differential equations (ODEs) or differential-algebraic equations (DAEs) of the form:
+\begin{equation}\label{eq:semi_discrete_numerical_methods}
+    M(\mathbf{u}) \partial_t \mathbf{u} = L\mathbf{u}+N(\mathbf{u}),
+\end{equation}
+where $M(\mathbf{u})$ is a Mass Matrix, $\mathbf{u}$ is the spacially discretized control vector, with elements $u_i(t)$, $L$ is a linear operator matrix, and $N(\mathbf{u})$ is a non-linear operator vector. The interpretation of the discretized control vector is different depending on which spacial discretization method is used. In the case of Finite Differences, the control vector $\mathbf{u}$ contains the values of the function $u(x,t)$ at discrete points in space, while in the case of Finite Elements, the control vector $\mathbf{u}$ contains the coefficients of the basis functions used to approximate $u(x,t)$.
+
+After the semi-discretization, we will be looking at the time integration methods used to solve the semi-discrete system of ODEs or DAEs. In Section~\ref{subseq:time_integrations} we will be looking at the different time integration methods used to solve the semi-discrete system of ODEs or DAEs. The time integration methods can be classified into two main categories: explicit and implicit methods. Explicit methods are generally easier to implement and computationally less expensive, but they may require smaller time steps for stability. Implicit methods are more stable and can handle larger time steps, but they require solving a system of equations at each time step, which can be computationally expensive. Initially, for the linear models we use a fully implicit method, while for the non-linear models we use a semi-implicit method. After this we go into more detailed methods for time integration, and state their advantages and disadvantages.

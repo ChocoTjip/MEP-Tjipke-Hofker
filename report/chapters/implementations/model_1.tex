@@ -1,0 +1,47 @@
+\subsection{Model 1: 0D Density Based Adsorption}\label{subseq:model_1}
+
+As a first step, we look at `0D' absorption and desorption (perfectly mixed system). In this model we will assume that the density is a measure for the percentage of hydrogen gas in the air, and we will assume that the pressure is uniform over the system (so if hydrogen is adsorbed, the density decreases, but the pressure stays the same). If we look at Equation~\ref{eq:absorption_equation}, we can see that a lot of the terms are not relevant for this model, however, since it assumes pure hydrogen gas, we assume it scales linearly with the ration of hydrogen gas in the air, becomming:
+\begin{equation}\label{eq:model_1_mdot}
+    \dot m = A \rho (\rho_{sat}-\rho_s(t)),
+\end{equation}
+where $\rho$ is the density at that point and $\rho_s$ is the saturation of the metal. The model can be summarized into the following system of equations:
+\begin{equation}\label{eq:model_1}
+\left\{\begin{aligned}
+    \partial_t\rho&=-\dot m_a(\rho, \rho_s) \\
+    \partial_t\rho_s&=\dot m_a(\rho, \rho_s)
+\end{aligned}\right.
+\end{equation}
+where our control variable is $\mathbf{u} = \begin{pmatrix}
+    \rho \\ \rho_s
+\end{pmatrix}$
+Under initial condition (since there are no advection/diffusion/movement we do not look at bc)
+\begin{equation}
+    \mathbf{u}(0) = \begin{pmatrix}1 \\ 0\end{pmatrix} \\
+\end{equation}
+
+\subsubsection*{Time Integration}
+For our IMEX method as described in Section~\ref{subseq:time_integrations}, we discretize $\mathbf{u}$ into $N$ timesteps of size $\Delta t$; $\mathbf{u}^n\approx\mathbf{u}(n*\Delta t)$. Now we can apply forward euler, and see the non-linear part as:
+
+\begin{equation*}
+\mathbf{u}^{n+1}=\mathbf{u}^n +\begin{pmatrix} -\dot{m}_a(\mathbf{u})\\ \dot{m}_a(\mathbf{u})\end{pmatrix} \Delta t  
+\end{equation*}
+where we evaluat the $\dot m(\mathbf{u}^n)$ each timestep according to Equation~\ref{eq:model_1_mdot}. The other time integration methods can be applied immedeately from combining Equations~\ref{eq:model_1}, and~\ref{eq:time_int} to see that:
+\begin{equation}
+    \begin{aligned}
+        M &= I \\
+        L &= 0 \\
+        N(\mathbf u) &= \begin{pmatrix} -\dot{m}_a(\mathbf{u})\\ \dot{m}_a(\mathbf{u})\end{pmatrix} 
+    \end{aligned}
+\end{equation}
+for some methods a Jacobean improves performance, this can be given by:
+\begin{equation}
+    J[N(\mathbf{u})]=\begin{pmatrix}
+        -\frac{\partial \dot{m}_a}{\partial \rho} & -\frac{\partial \dot{m}_a}{\partial \rho_s}\\
+        \frac{\partial \dot{m}_a}{\partial \rho} & \frac{\partial \dot{m}_a}{\partial \rho_s}\\
+    \end{pmatrix} = 
+    \begin{pmatrix}
+        -A(\rho_{sat}-\rho_s) & A\rho \\
+        A(\rho_{sat}-\rho_s) & -A\rho
+    \end{pmatrix}
+\end{equation}
+applying either of the aforementioned methods gives the result for the perfectly stirred reactor.

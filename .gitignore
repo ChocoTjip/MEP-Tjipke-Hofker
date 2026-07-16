@@ -1,0 +1,25 @@
+/adobe
+/domenico 1D
+/Ferrite Tutorials
+/planning.xlsx
+/progress meeting
+/Swayam
+/update meetings
+
+# ParaView / VTK output files
+*.vtu
+*.pvd
+
+# auxilary files
+*.aux
+*.log
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.toc
+*.out
+build/
+
+# old
+old/
+*/gmsh tutorials/

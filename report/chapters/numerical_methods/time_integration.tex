@@ -1,0 +1,11 @@
+\subsection{Time Integration}\label{subseq:time_integrations}
+In this section we will be looking at how we use time integration on our semi-discretized matrix vector $\mathbf{u}$. This form is 
+
+\subsubsection*{Linear Form}
+In this section we look at the different ways to solve a semi-discretized problem in the (simplified) form:
+
+\begin{equation}\label{eq:time_int}
+    M \partial_t \mathbf{u} = L[\mathbf{u}]+N(\mathbf{u})
+\end{equation}
+
+where $M$ is a linear Mass Matrix, $\mathbf{u}$ is the spacially discretized control vector, with elements

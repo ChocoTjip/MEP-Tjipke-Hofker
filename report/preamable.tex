@@ -1,0 +1,88 @@
+% Packages
+\usepackage[utf8]{inputenc} % Required for inputting international characters
+\usepackage[T1]{fontenc}    % Output font encoding for international characters
+\usepackage[left=3cm, right=3cm, top=3cm,bottom=3cm]{geometry} 
+\usepackage[english]{babel}
+%\usepackage{amsmath}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{url}
+\usepackage{times}  % Times font
+\usepackage{setspace}
+%\usepackage{datetime}
+\usepackage{tocloft}
+\usepackage{titlesec}
+\usepackage{natbib}
+\usepackage{fullpage}
+\usepackage{physics}
+\usepackage{amssymb}
+\usepackage{ulem}
+\usepackage{amsthm}
+\usepackage[english]{babel}
+\usepackage[title]{appendix}
+\usepackage{pythonhighlight}
+\usepackage[version=4]{mhchem}
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstdefinelanguage{Julia}{
+  morekeywords={
+    function,end,if,else,elseif,for,while,return,struct,mutable,
+    begin,let,where,using,import,module,export,const,local,
+    global,true,false,nothing,try,catch,finally,do,in,break,
+    continue
+  },
+  sensitive=true,
+  morecomment=[l]\#,
+  morestring=[b]",
+}
+
+\lstset{
+  language=Julia,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{green!50!black},
+  stringstyle=\color{red},
+  numbers=left,
+  frame=single,
+  breaklines=true,
+  showstringspaces=false
+}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+
+
+% my own dubble underscore
+\def\dunder#1{\underline{\underline{#1}}}
+
+\DeclareMathOperator\arctanh{arctanh}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{example}{Example}
+\DeclareMathOperator{\sgn}{sgn}
+\newcommand{\Log}{\text{Log}}
+
+% Define new commands
+\renewcommand{\cftsecfont}{\normalfont}
+\renewcommand{\cftsecpagefont}{\normalfont}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsecaftersnum}{.}
+\newcommand{\del}{\partial}
+\titlelabel{\thetitle.\quad}
+
+
+\newcommand{\minus}{\scalebox{0.75}[1.0]{$-$}}

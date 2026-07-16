@@ -1,0 +1,64 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{mathtools} % loads amsmath \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{eqnarray}
+\usepackage{bm}
+
+\input{preamable.tex}
+
+\begin{document}
+\input{chapters/titlepage.tex}
+
+% page counting for abstract and toc I, II
+\pagenumbering{roman}
+\input{chapters/abstract.tex}
+\vspace*{15mm}
+\tableofcontents
+\clearpage
+
+% set page counting to arabic again (and 1)
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{chapters/introduction.tex}
+
+% physics
+\newpage
+\input{chapters/physics/physics.tex}
+
+% numerical methods
+\newpage
+\input{chapters/numerical_methods/numerical_methods.tex}
+\input{chapters/numerical_methods/finite_differences.tex}
+\input{chapters/numerical_methods/finite_elements.tex}
+\input{chapters/numerical_methods/time_integration.tex}
+
+% implementations
+\newpage
+\input{chapters/implementations/implementations.tex}
+\input{chapters/implementations/model_1.tex}
+\input{chapters/implementations/model_2.tex}
+\input{chapters/implementations/model_3.tex}
+\input{chapters/implementations/model_4.tex}
+\input{chapters/implementations/model_5.tex}
+
+\clearpage
+\input{chapters/results and conclusion/results.tex}
+\clearpage
+\input{chapters/results and conclusion/conclusion.tex}
+\setcounter{equation}{0}
+
+% Appendix
+\clearpage
+\input{chapters/appendix/code.tex}
+
+
+
+% Bibliography
+\clearpage
+\nocite{*}
+\bibliographystyle{unsrt}
+\bibliography{chapters/mybib}
+
+\end{document}
