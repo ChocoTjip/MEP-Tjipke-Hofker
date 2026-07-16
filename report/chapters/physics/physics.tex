@@ -45,7 +45,7 @@ where $A_a^2$ and $A_d^2$ are constants that depend on the temperature, and the 
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.4\textwidth]{figures/phy_hysteresis_curve.png}
+    \includegraphics[width=0.6\textwidth]{figures/phy_hysteresis_curve.png}
     \caption{Schematic of the absorption and desorption curves of metal hydrides. The x-axis is the ratio between Hydrogen and Metal, and the capacity can therefor be interpreted as a measure for $x$ in $MH_x$. The absorption curve is the left and upper lines, the desorption is given in the right and lower lines. The hysteresis effect can be seen in the difference between the two curves. Schematic from Sandrock et al.\cite{Sandrock1999}}
     \label{fig:absorption_desorption}
 \end{figure}
@@ -74,24 +74,42 @@ where $\mathbf{F}$ is the force, $m$ is the mass, $\mathbf{a}$ is the accelerati
     \frac{\mathbf{F}_{v}}{V} &= \mu \Delta \mathbf{u} \\
     % \frac{\mathbf{F}_{e}}{V} &= \mathbf{f}
 \end{align*}
-Where $p$ is the pressure, $\mu$ is the dynamic viscosity, and $\mathbf{f}$ is the external force. For the viscosity, we did assume a Newtonian fluid. Combining above equations, we get the Navier-Stokes equation:
+Where $p$ is the pressure, $\mu$ is the dynamic viscosity, and $\mathbf{f}$ is the external force. For the viscosity, we did assume a Newtonian fluid. Combining above equations, we get the \textbf{Navier-Stokes equation}:
 
 \begin{align}
     \rho \, (\partial_t \mathbf{u} + (\mathbf{u} \cdot \nabla) \mathbf{u}) &= - \nabla p + \mu \Delta \mathbf{u}
 \end{align}
 
-Stokes:
-\begin{equation}\label{eq:stokes_equation}
-    \nabla \cdot \sigma + \mathbf{f} = 0
-\end{equation}
+To go from Navier-Stokes to Stokes, we assume that the flow is slow, and the inertial forces are negligible compared to the viscous forces. This is known as the low Reynolds number assumption. The Reynolds number is a dimensionless quantity that describes the ratio of inertial forces to viscous forces in a fluid flow. It is given by:
 
+\begin{equation}
+    Re = \frac{\rho \, U \, L}{\mu}
+\end{equation}
+Where $U$ is the characteristic velocity, and $L$ is the characteristic length. For low Reynolds number flows, the inertial forces are negligible compared to the viscous forces, and the Navier-Stokes equation reduces to the Stokes equation:
+\begin{equation}
+    \rho_g \partial_t \mathbf{u} = - \nabla p + \mu \Delta \mathbf{u}
+\end{equation}
 
 \subsubsection*{Model Assumptions}
 For our first spacially coupled models, we aim to measure the density of hydrogen gas $\rho_g$ in the battery, and the saturation of the metal hydride $\rho_s$. We do not yet aim to measure velocity of the gas and it is assumed that the flow is constant through the battery. The density of the hydrogen gas is seen as a fraction of the total density of the gas mixture, and we will assume that the gas mixture is incompressible. Thus in essence: $\rho = \rho_g + \rho_{other}$, where $\rho_{other}$ is the density of the other gases in the mixture. Since this is assumed constant, we can neglect it in our models, and we only have to look at Diffusion and Convection of the hydrogen gas:
 
-\begin{equation}
+\begin{equation}\label{eq:phy_model_2}
     \left\{ \begin{aligned}
         \partial_t \rho_g &= D \nabla^2 \rho_g -\mathbf{v}\partial_x\rho_g - \dot{m}(\rho_g, \rho_s) \\
         \partial_t \rho_s &= \dot{m}(\rho_g, \rho_s)
     \end{aligned} \right.
+\end{equation}
+
+In our next iteration of 1D and 2D models, we will be looking at almost complete Navier-Stokes equations, with mass conservation, and absorption and desorption of hydrogen gas. In these models we have a pure hydrogen gas, and we will be looking at the density of the hydrogen gas $\rho_g$, which will also (as described in the previous section) be related to the pressure of the hydrogen gas $p$ through the ideal gas law. The equations will then be given by:
+
+\begin{equation}\label{eq:phy_model_4}
+    \left\{\begin{aligned}
+    \rho_g \partial_t v &=-RT\partial_x\rho_g-\rho_g v \partial_x v+\mu\partial_x^2 v -S \\
+    \partial_t\rho_g&=-(\partial_x \rho_g)v-\rho_g (\partial_x v) + \mu_\epsilon\partial_x^2\rho_g-\dot m \\
+    \partial_t \rho_s &= \dot m 
+    \end{aligned}\right.
+\end{equation}
+where we used the ideal gas law to substitute the pressure of the hydrogen gas:
+\begin{equation}
+    p = R T \rho_g
 \end{equation}
