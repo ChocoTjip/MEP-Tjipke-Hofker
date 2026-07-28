@@ -1,23 +1,8 @@
 \subsection{Model 3: 2D model with predetermined flow speed}
 
-This part is meant to combine absorption, diffusion, and convection shown into a 2D model. The shape of the model is given in Figure~\ref{fig:model_3_domain}.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.5\textwidth]{figures/model_3_domain.png}
-    \caption{The domain of the 2D model. The domain is $\Omega$. 
-    The boundary $\partial\Omega_1$ is for the inlet of the battery.}\label{fig:model_3_domain}
-    The boundary $\partial\Omega_2$ is for the insulating boundary. 
-\end{figure}
-
 The goal is to solve for:
 
-\begin{equation}
-\left\{\begin{aligned}
-    \partial_t\rho&= D(\Delta\rho)-\mathbf{v}\cdot(\nabla\rho)-\dot m_a(\rho, \rho_s) \\
-    \partial_t\rho_s&=\dot m_a(\rho, \rho_s)
-\end{aligned}\right.
-\end{equation}
+
 Where $\rho$ is the density at that point and $\rho_s$ is the saturation of the metal. $D$ is the diffusivity, and $\mathbf{v}$ the velocity ($\mathbf v=(v_x, v_y)$).
 
 Under initial condition and boundary conditions are (since there is no coupling effects of saturation of the metal I am pretty sure we do not need boundary conditions there, but I'll look into this and phrase it more rigorous):

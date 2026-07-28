@@ -1,0 +1,46 @@
+\clearpage
+
+\subsection*{Model Assumptions}
+
+In this first model we do not yet look at the velocity, and pressure, and assume they are constant. The equations for the absorption of mass can then be given by:
+
+\begin{align}
+        \frac{D\rho_g}{Dt} &= -\dot{m}\label{eq:phy_drhogdt} \\
+        \frac{D\rho_s}{Dt} &= \dot{m}\label{eq:phy_drhosdt}
+\end{align}
+where
+\begin{equation}\label{eq:phy_stupidm}
+    \dot{m} = A(\rho_{sat} - \rho_s(t)),
+\end{equation}
+with:
+\begin{align}
+    \rho_g(0) &= \rho_{g,0}, \\
+    \rho_s(0) &= \rho_{s,0}.
+\end{align}
+If we look at Equation~\ref{eq:phy_drhosdt}, we can analytically solve:
+\begin{align}
+    \rho_s(t) &= \rho_{sat} - (\rho_{sat} - \rho_{s,0}) e^{-At} 
+\end{align}
+by looking at Equations~\ref{eq:phy_drhogdt} and~\ref{eq:phy_drhosdt}, we see that:
+\begin{align}
+    \frac{D\rho_g(t)}{Dt} &= -\frac{D\rho_s(t)}{Dt} \\
+    \implies \rho_g(t) &= \rho_{g,0} - (\rho_s(t) - \rho_{s,0}) \\
+    & = \rho_{g,0} + \rho_{s,0} - \rho_s(t) \\
+    & = \rho_{g,0} + \rho_{s,0} - \rho_{sat} + (\rho_{sat} - \rho_{s,0}) e^{-At} 
+\end{align}
+say we move this to the 1D battery, then on the right hand side there initially is no hydrogen gas, and the metal hydride is not yet saturated. Now for this part we have (as long as no gas reaches here yet):
+\begin{align}
+    \rho_g(0) & = 0, \\
+    \rho_s(0) & = 0, \\
+    \rho_{sat} & = 1,
+\end{align}
+and after one second we have:
+\begin{align}
+    \rho_s(1) &= 1 - e^{-A} \\
+    \rho_g(1) &= 0 + 0 - 1 + e^{-A} = e^{-A} - 1
+\end{align}
+giving a negative sign to our density of gas. This is because we do not take into account the density of gas in our mass transfer equations. While logically, there can only be mass transfer if there is gas. Since our density is a measure for the amount of hydrogen gas at that point, and our total gas density is constant, we can alter Equation~\ref{eq:phy_stupidm} to be:
+\begin{equation}
+    \dot{m} = A(\rho_{sat} - \rho_s(t))\frac{\rho_g(t)}{\rho_{g,total}},
+\end{equation}
+where $\rho_{g,total}$ is the total density of gas in the battery (which is constant). This way, if there is no hydrogen gas, there can be no mass transfer. 

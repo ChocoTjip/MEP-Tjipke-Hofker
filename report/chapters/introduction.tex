@@ -4,14 +4,42 @@ When generating hydrogen gas from renewable energy sources, it is one of the cle
 
 \subsection{Problem Introduction}
 
-A lot of previous research has been done on the absorption and desorption of hydrogen in metal hydride materials to use as batteries or other methods of hydrogen storage\cite{Nemukula2025}, and a lot of research has been done for modelling these processes\cite{Sandrock1999}\cite{RabienatajDarzi2016}. The last of which, the paper by Rabienataj Darzi et al.\cite{RabienatajDarzi2016}, is the most relevant to our work, as it looks at the absorption and desorption of hydrogen in metal hydride materials. This paper models using a finite volume implementation using the commercial software Ansys Fluent\cite{Fluent}. The model is not public, and uses finite volume methods. The goal of this thesis is to implement a model using finite element methods and open source software, and to compare the results of our model with the results of the model by Rabienataj Darzi et al.\cite{RabienatajDarzi2016}. 
+A lot of previous research has been done on the absorption and desorption of hydrogen in metal hydride materials for use as batteries or other methods of hydrogen storage \cite{Nemukula2025}. In addition, many numerical models have been developed to simulate these processes \cite{Sandrock1999}\cite{RabienatajDarzi2016}. The paper by Rabienataj Darzi et al.\cite{RabienatajDarzi2016} is the most relevant to this work, as it models the absorption and desorption of hydrogen in a metal hydride storage tank. Their model is implemented using the finite volume method in the commercial software Ansys Fluent \cite{Fluent}. Since the implementation is not publicly available and is based on finite volume methods, it cannot easily be reproduced, verified, or extended using finite element methods. The goal of this thesis is therefore to develop an open-source finite element implementation of the model and compare its results with those presented by Rabienataj Darzi et al.\cite{RabienatajDarzi2016}.
+
+\subsection{Research Gap}
+
+Although several numerical models for hydrogen absorption and desorption in metal hydride storage systems have been presented in the literature, most published implementations rely on commercial software or are not publicly available. As a result, there are few open-source finite element implementations that can be used to study these processes or serve as a basis for further research. This thesis addresses this gap by developing and validating an open-source finite element model for hydrogen absorption and desorption in a metal hydride storage tank.
 
 \subsection{Research Question and Goal}
 
-The goal of this thesis is to answer the question: How can we model the absorption and desorption of hydrogen in metal hydride materials using finite element methods using only open source software? 
+The main research question of this thesis is:
 
-We aim to apply finite element methods to model the adsorption of $H_2$ gas in the battery. Finite element methods provide flexibility in handling complex geometries and heterogeneous materials, allow precise spatial resolution of physical processes, and are well-suited for solving coupled multiphysics problems. When combined, we hopefully end with a powerful tool to explore different battery configurations, and to evaluate their efficiency and response time.
-We will be modelling this in Julia, a modern, high-performance programming language designed for technical and scientific computing. Julia offers a combination of ease of use, speed comparable to low-level languages, and strong support for functional and mathematical programming paradigms. It is open source and has many libraries and packages for scientific computing, data analysis, and visualization. We will be using the DifferentialEquations.jl package for solving differential equations, the Ferrite.jl package for creating finite element problems, and the MethodOfLines.jl package for creating a finite difference approach to the problem to validate our results from the Finite Element Method.
+\begin{quote}
+How can the absorption and desorption of hydrogen in metal hydride materials be modelled using finite element methods and only open-source software?
+\end{quote}
+To answer this question, the following subquestions are considered:
+
+\begin{enumerate}
+    \item How can we mathematically describe the physical processes governing the movement, absorption, and desorption of hydrogen in a metal hydride storage tank?
+    \item How can the nonlinear absorption and desorption processes be incorporated into a finite element formulation?
+    \item How can the governing equations be discretized in space using the finite element method?
+    \item How can the resulting semi-discrete system be integrated efficiently and accurately in time?
+\end{enumerate}
+
+We aim to apply finite element methods to model the adsorption of $H_2$ gas in the battery. Finite element methods provide flexibility in handling complex geometries and heterogeneous materials, allow precise spatial resolution of physical processes, and are well-suited for solving coupled multiphysics problems. Combined with modern open-source scientific computing tools, this results in a flexible framework for exploring different battery configurations and evaluating their efficiency and response time.
+
+The model will be implemented in Julia, a modern, high-performance programming language designed for technical and scientific computing. Julia combines ease of use with performance comparable to low-level languages and provides extensive support for scientific computing through open-source packages. In this work, Ferrite.jl is used for the finite element implementation, DifferentialEquations.jl for the time integration of the resulting systems, and MethodOfLines.jl to construct a finite difference implementation for validation of the finite element model.
+
+% \subsection{Problem Introduction}
+
+% A lot of previous research has been done on the absorption and desorption of hydrogen in metal hydride materials to use as batteries or other methods of hydrogen storage\cite{Nemukula2025}, and a lot of research has been done for modelling these processes\cite{Sandrock1999}\cite{RabienatajDarzi2016}. The last of which, the paper by Rabienataj Darzi et al.\cite{RabienatajDarzi2016}, is the most relevant to our work, as it looks at the absorption and desorption of hydrogen in metal hydride materials. This paper models using a finite volume implementation using the commercial software Ansys Fluent\cite{Fluent}. The model is not public, and uses finite volume methods. The goal of this thesis is to implement a model using finite element methods and open source software, and to compare the results of our model with the results of the model by Rabienataj Darzi et al.\cite{RabienatajDarzi2016}. 
+
+% \subsection{Research Question and Goal}
+
+% The goal of this thesis is to answer the question: How can we model the absorption and desorption of hydrogen in metal hydride materials using finite element methods using only open source software? 
+
+% We aim to apply finite element methods to model the adsorption of $H_2$ gas in the battery. Finite element methods provide flexibility in handling complex geometries and heterogeneous materials, allow precise spatial resolution of physical processes, and are well-suited for solving coupled multiphysics problems. When combined, we hopefully end with a powerful tool to explore different battery configurations, and to evaluate their efficiency and response time.
+% We will be modelling this in Julia, a modern, high-performance programming language designed for technical and scientific computing. Julia offers a combination of ease of use, speed comparable to low-level languages, and strong support for functional and mathematical programming paradigms. It is open source and has many libraries and packages for scientific computing, data analysis, and visualization. We will be using the DifferentialEquations.jl package for solving differential equations, the Ferrite.jl package for creating finite element problems, and the MethodOfLines.jl package for creating a finite difference approach to the problem to validate our results from the Finite Element Method.
 
 \subsection{Report Contents}
 
@@ -21,4 +49,4 @@ In Section~\ref{sec:physics} we will look at the physics behind the absorption a
 
 \vspace{.4cm}
 
-This thesis is written as part of the Master of Applied Mathematics at the Technical University of Delft. The thesis is to be publicly defended on November the 27th, 2026. It is written by Tjipke Hofker, and supervised by Dr. D.J.P. Domenico, and co-supervised by Dr. J.L.A. Dubbeldam. The code can be found on GitHub\footnote{\url{https://github.com/ChocoTjip/MEP-tjipke-hofker}}.
+This thesis is written as part of the Master of Applied Mathematics at the Technical University of Delft. The thesis is to be publicly defended on November the 27th, 2026. It is written by Tjipke Hofker, and supervised by Dr.~D.J.P. Domenico, and co-supervised by Dr.~J.L.A. Dubbeldam. The code can be found on GitHub\footnote{\url{https://github.com/ChocoTjip/MEP-tjipke-hofker}}.

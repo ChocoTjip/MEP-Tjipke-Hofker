@@ -1,7 +1,21 @@
 \subsection{Finite Element Methods}\label{subseq:finite_element_methods}
 
-in this subsection we will be looking at the discretization techniques Finite Element Methods entail, to tackle spatial discretization of functions of the form as seen in Equation~\ref{eq:general_pde_numerical_methods}. 
+In this subsection we will be looking at the discretization techniques Finite Element Methods entail, to tackle spatial discretization of functions of the form as seen in Equation~\ref{eq:general_pde_numerical_methods}. The core idea of a finite element method is to approximate the solution by a sum of finite element base functions, which are piecewise polynomial functions defined on a mesh of the domain. The finite element method then seeks to find the coefficients of these base functions that best approximate the solution to the PDE.
 
-The finite difference assumes that the solution is smooth enough to be approximated by a polynomial of a certain degree, and uses finite element base functions to create a base for this function space.
+Say we have a PDE of the form:
+\begin{equation}\label{eq:num_general_pde_numerical_methods}
+    \partial_t\rho = -v\partial_x\rho \quad \text{in } \Omega
+\end{equation}
+where $\rho$ is the unknown function, $v$ is the flow speed, and $\Omega$ is the domain of interest. The finite element method aims to find the closest approximation of $\rho$ by a linear combination of finite element base functions $\psi^i$:
+\begin{equation}
+    \rho \approx \sum_i \rho^i \psi^i
+\end{equation}
+where $\rho^i$ are the coefficients to be determined. The finite element base functions $\psi^i$ are typically chosen to be piecewise polynomials that are defined on a mesh of the domain $\Omega$. The choice of the base functions and the mesh will depend on the specific problem and the desired accuracy of the solution. Now the way we will find the coefficients $\rho^i$ is by using test functions and testing whether they satisfy the PDE in a weak sense, so:
+
+\begin{equation}
+    \int_\Omega w^j \left( \partial_t\rho + v\partial_x\rho \right) dx = 0 \quad \forall j
+\end{equation}
+for a set of test functions $w^j$. In the Galerkin method, we choose the test functions to be the same as the finite element base functions, so $w^j = \psi^j$. 
+\cite{toshniwal2024afe}
 
 \subsubsection*{Lagrange Polynomials}
