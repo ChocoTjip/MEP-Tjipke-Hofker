@@ -1,21 +1,288 @@
 \subsection{Finite Element Methods}\label{subseq:finite_element_methods}
 
-In this subsection we will be looking at the discretization techniques Finite Element Methods entail, to tackle spatial discretization of functions of the form as seen in Equation~\ref{eq:general_pde_numerical_methods}. The core idea of a finite element method is to approximate the solution by a sum of finite element base functions, which are piecewise polynomial functions defined on a mesh of the domain. The finite element method then seeks to find the coefficients of these base functions that best approximate the solution to the PDE.
+In this subsection we will be looking at the discretization techniques Finite Element Methods entail, to tackle spatial discretization of functions of the form as seen in Equation~\ref{eq:general_pde_numerical_methods}. A lot of this section is based on the applied finite element lecture notes written by Toshniwal et al.\cite{toshniwal2024afe}, so some knowledge is assumed. We will be looking at the Galerkin Finite Element Discretization, Lagrange Polynomial Basis Functions, and Numerical Integration Using Gaussian Quadrature, and SUPG stabilization.
 
-Say we have a PDE of the form:
-\begin{equation}\label{eq:num_general_pde_numerical_methods}
-    \partial_t\rho = -v\partial_x\rho \quad \text{in } \Omega
-\end{equation}
-where $\rho$ is the unknown function, $v$ is the flow speed, and $\Omega$ is the domain of interest. The finite element method aims to find the closest approximation of $\rho$ by a linear combination of finite element base functions $\psi^i$:
-\begin{equation}
-    \rho \approx \sum_i \rho^i \psi^i
-\end{equation}
-where $\rho^i$ are the coefficients to be determined. The finite element base functions $\psi^i$ are typically chosen to be piecewise polynomials that are defined on a mesh of the domain $\Omega$. The choice of the base functions and the mesh will depend on the specific problem and the desired accuracy of the solution. Now the way we will find the coefficients $\rho^i$ is by using test functions and testing whether they satisfy the PDE in a weak sense, so:
+\subsubsection{Galerkin Finite Element Discretization}
+
+To derive a finite element formulation of the governing equations, we employ the standard Galerkin method. Since the equations are posed on our domain $\Omega$, we introduce a finite-dimensional approximation space:
 
 \begin{equation}
-    \int_\Omega w^j \left( \partial_t\rho + v\partial_x\rho \right) dx = 0 \quad \forall j
+H^r(\Omega) := \bigg\{ f:(\Omega)\to \mathbb{R} \mid \forall \alpha \in \mathbb{N}^d, |\alpha| \leq r, D^\alpha f \in L^2(\Omega) \bigg\},
 \end{equation}
-for a set of test functions $w^j$. In the Galerkin method, we choose the test functions to be the same as the finite element base functions, so $w^j = \psi^j$. 
-\cite{toshniwal2024afe}
+where $r$ is the order of differentiability ($r \in \mathbb{N}$), and $D^\alpha$ is the weak derivative of order $\alpha$. The space $H^r(\Omega)$ is a Sobolev space, which consists of functions that are square-integrable along with their weak derivatives up to order $r$. The Sobolev space $H^1(\Omega)$ is particularly important in the finite element method, as it allows for the inclusion of functions that may not be classically differentiable but have weak derivatives. This space consists of continuous, piecewise linear basis functions. The trial and test spaces are chosen identical,
+\begin{equation}
+U_h=V_h,
+\end{equation}
+which is the defining property of the Galerkin method.
 
-\subsubsection*{Lagrange Polynomials}
+Let ${\{\phi^i\}}_{i=1}^{N}$ denote the nodal basis of $V_h$. Every unknown is approximated as a linear combination of these basis functions,
+\[
+u_h(x,t)=\sum_{i=1}^{N}u^i(t)\phi^i(x),
+\]
+where the coefficients $u^i(t)$ are the nodal degrees of freedom.
+
+For each governing equation, we seek an approximation in $U_h$ such that the residual is orthogonal to every test function $\phi^k\in V_h$, i.e.
+\[
+\int_\Omega R(u_h)\,\phi^k\,dx = 0,
+\qquad
+k=1,\ldots,N,
+\]
+where $R(u_h)$ denotes the residual of the corresponding differential equation.
+
+Whenever second-order derivatives appear, integration by parts is applied to reduce the differentiability requirements on the trial functions from
+$H^2(\Omega)$ to $H^1(\Omega)$. This produces the familiar stiffness matrices and introduces the natural boundary terms, while Dirichlet boundary conditions are imposed separately through the finite element constraint handler.
+
+\subsubsection{SUPG Stabilization}
+
+For convection-dominated problems, the standard Galerkin finite element method may develop non-physical oscillations. As stated before, this is related to the Peclet number in Equation~\ref{eq:num_peclet}.
+
+To illustrate this behaviour, we consider the one-dimensional advection--diffusion equation
+
+\begin{equation}
+    \partial_t \rho_g = v \partial_x \rho_g + D \partial_{xx}\rho_g.
+\end{equation}
+
+with initial condition $\rho_g(x,0)=\rho_0(x)$ and boundary conditions $\rho_g(0,t)=1$. It is our goal to see if we can reach the solution where $D=0$, which gives pure advection and gives a solution of $\rho_g(x,t)=\rho_0(x-vt)$.
+
+In the standard Galerkin formulation, one seeks \(\rho_{g,h} \in V_h^\rho\) such that for every test function \(\phi^k \in W_h^\rho\),
+
+\begin{equation}
+    \int_\Omega \phi^k \partial_t \rho_{g,h}\,dx
+    =
+    \int_\Omega \phi^k v \partial_x \rho_{g,h}\,dx
+    +
+    \int_\Omega \phi^k D \partial_{xx}\rho_{g,h}\,dx.
+\end{equation}
+
+After integration by parts of the diffusion term, this yields the standard semi-discrete Galerkin formulation. However, for large values of \(\mathrm{Pe}\), the resulting method may become oscillatory.
+
+A common stabilization technique is the Streamline Upwind Petrov--Galerkin (SUPG) method. In this method, the trial space remains unchanged, but the test space is modified. Instead of the standard Galerkin test function \(\phi^k\), the following Petrov--Galerkin test function is used:
+
+\begin{equation}
+    \tilde{\phi}^k = \phi^k + \tau v \partial_x \phi^k,
+\end{equation}
+
+where \(\tau\) is a stabilization parameter. The SUPG formulation then reads: find \(\rho_{g,h} \in V_h^\rho\) such that for every \(\phi^k \in W_h^\rho\),
+
+\begin{equation}
+    \int_\Omega \tilde{\phi}^k \partial_t \rho_{g,h}\,dx
+    =
+    \int_\Omega \tilde{\phi}^k v \partial_x \rho_{g,h}\,dx
+    +
+    \int_\Omega \tilde{\phi}^k D \partial_{xx}\rho_{g,h}\,dx.
+\end{equation}
+
+Using linear finite elements, the second derivative term in the additional SUPG contribution is typically omitted, since \(\partial_{xx}\rho_{g,h}\) vanishes inside each element for piecewise linear approximations. In that case, the stabilization term mainly acts on the convective part of the operator.
+
+A commonly used expression for the stabilization parameter in one dimension is
+
+\begin{equation}
+    \tau
+    =
+    \frac{h}{2|v|}
+    \left(
+    \coth(\mathrm{Pe}) - \frac{1}{\mathrm{Pe}}
+    \right).
+\end{equation}
+
+For large P\'eclet numbers, this expression approaches
+
+\begin{equation}
+    \tau \approx \frac{h}{2|v|}.
+\end{equation}
+
+The SUPG method can therefore be interpreted as adding diffusion primarily in the streamline direction, which suppresses non-physical oscillations while preserving the sharpness of the transported front better than standard upwind methods.
+
+The effect of SUPG stabilization is illustrated in Figure~\ref{fig:num_supg}. In all four cases the parameters are fixed at \(t=0.5\), \(v=1.0\), and \(h=0.02\), while the diffusion coefficient \(D\) is varied, resulting in different element Peclet numbers. The standard Galerkin solutions are shown for \(\mathrm{Pe}=10\) and \(\mathrm{Pe}=100\). For \(\mathrm{Pe}=10\), the Galerkin solution remains acceptable, while for \(\mathrm{Pe}=100\) clear non-physical oscillations are visible. The SUPG solutions are shown for \(\mathrm{Pe}=100\) and \(\mathrm{Pe}=1000\). In both cases the oscillations are effectively suppressed, demonstrating the stabilizing effect of the method in convection-dominated regimes.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=.7\textwidth]{figures/num_SUPG.png}
+    \caption{Comparison between standard Galerkin FEM and SUPG FEM for the one-dimensional advection--diffusion equation at $t=0.5$, with $v=1.0$ and $h=0.02$. The standard Galerkin method gives an acceptable solution for $\mathrm{Pe}=10$, but develops strong oscillations for $\mathrm{Pe}=100$. The SUPG method remains stable and non-oscillatory for both $\mathrm{Pe}=100$ and $\mathrm{Pe}=1000$.}
+    \label{fig:num_supg}
+\end{figure}
+
+\subsubsection{Lagrange Polynomial Basis Functions}
+
+In the finite element method, the solution within each element is approximated using a finite-dimensional set of basis functions. In this work, Lagrange polynomial basis functions are used. These basis functions are nodal, meaning that every basis function is equal to one at its associated interpolation node and zero at all other interpolation nodes.
+
+Consider a one-dimensional reference element
+
+\begin{equation}
+    \hat{\Omega} = [-1,1],
+\end{equation}
+
+with interpolation nodes
+
+\begin{equation}
+    \xi_1,\xi_2,\ldots,\xi_{p+1},
+\end{equation}
+
+where $p$ is the polynomial degree of the interpolation. The $i$-th Lagrange basis function is defined as
+
+\begin{equation}\label{eq:num_lagrange}
+    \phi^i(\xi)=\prod_{\substack{j=1 \\ j\neq i}}^{p+1}\frac{\xi-\xi_j}{\xi_i-\xi_j}.
+\end{equation}
+
+The basis functions satisfy the nodal interpolation property
+
+\begin{equation}
+    \phi^i(\xi_j)=\delta_{ij},
+\end{equation}
+
+where $\delta_{ij}$ is the Kronecker delta. Therefore,
+
+\begin{equation}
+    \delta_{ij}
+    =
+    \begin{cases}
+        1, & i=j,\\
+        0, & i\neq j.
+    \end{cases}
+\end{equation}
+
+The basis functions also satisfy the partition-of-unity property
+
+\begin{equation}
+    \sum_{i=1}^{p+1}\phi^i(\xi)=1.
+\end{equation}
+
+A scalar field $u(\xi)$ can consequently be approximated within an element by
+
+\begin{equation}
+    u_h(\xi)=\sum_{i=1}^{p+1}u^i\phi^i(\xi),
+\end{equation}
+
+where $u^i$ is the value of the finite element approximation at interpolation node $\xi_i$. The basis functions are initially defined on the reference element. A physical element
+
+\begin{equation}
+    \Omega_e=[x_a,x_b]
+\end{equation}
+
+is related to the reference element through the mapping
+
+\begin{equation}
+    x(\xi)
+    =
+    \frac{1-\xi}{2}x_a
+    +
+    \frac{1+\xi}{2}x_b.
+\end{equation}
+
+The corresponding Jacobian is
+
+\begin{equation}
+    J_e
+    =
+    \frac{\partial x}{\partial \xi}
+    =
+    \frac{x_b-x_a}{2}.
+\end{equation}
+
+Spatial derivatives in the physical coordinate are obtained using
+
+\begin{equation}
+    \frac{\partial \phi^i}{\partial x}
+    =
+    \frac{\partial \phi^i}{\partial \xi}
+    \frac{\partial \xi}{\partial x}
+    =
+    \frac{1}{J_e}
+    \frac{\partial \phi^i}{\partial \xi}.
+\end{equation}
+
+An example of Lagrange polynomial basis functions of degree $p=3$ is shown in Figure~\ref{fig:num_lagrange_polynomials}. The interpolation nodes are chosen to be on $[-1, -0.1, 0.5, 1]$.
+\begin{figure}[h]\centering
+    \includegraphics[width=.7\textwidth]{figures/num_lagrange_polynomials.png}
+    \caption{Lagrange polynomial basis functions of degree $p=3$, as implementations of Equation~\ref{eq:num_lagrange}. The basis functions are defined on the reference element $\hat{\Omega}=[-1,1]$ and satisfy the nodal interpolation property $\phi^i(\xi_j)=\delta_{ij}$. The interpolation nodes are chosen to be on $[-1, -0.1, 0.5, 1]$.}\label{fig:num_lagrange_polynomials}
+\end{figure}
+
+\subsubsection{Numerical Integration Using Gaussian Quadrature}
+
+The finite element matrices and vectors contain element integrals involving basis functions, their derivatives, and the current finite element solution. These integrals are generally evaluated using numerical quadrature.
+
+It is important to distinguish between interpolation nodes and quadrature points. Interpolation nodes determine the finite element basis functions and the degrees of freedom of the approximate solution. Quadrature points are only used to evaluate integrals numerically and do not introduce additional degrees of freedom.
+
+An integral over a physical element can be transformed to the reference element according to
+
+\begin{equation}
+    \int_{\Omega_e}f(x)\,dx
+    =
+    \int_{-1}^{1}f\bigl(x(\xi)\bigr)J_e\,d\xi.
+\end{equation}
+
+Using an $n_q$-point quadrature rule, the reference-element integral is approximated by
+
+\begin{equation}
+    \int_{-1}^{1}g(\xi)\,d\xi
+    \approx
+    \sum_{q=1}^{n_q}w_q g(\xi_q),
+\end{equation}
+
+where $\xi_q$ are the quadrature points and $w_q$ are the associated quadrature weights. The physical-element integral is therefore approximated by
+
+\begin{equation}
+    \int_{\Omega_e}f(x)\,dx
+    \approx
+    \sum_{q=1}^{n_q}
+    w_q
+    f\bigl(x(\xi_q)\bigr)
+    J_e.
+\end{equation}
+
+Gauss--Legendre quadrature is commonly used because an $n_q$-point Gauss rule integrates every polynomial of degree at most $2n_q-1$ exactly.
+A one-point Gauss rule therefore integrates polynomials up to degree one exactly. 
+
+The required quadrature order depends on the polynomial degree of the complete integrand rather than only on the polynomial degree of an individual basis function. For example, the element mass matrix for $P_1$ basis functions contains the integral
+
+\begin{equation}
+    (M_e)_{ij}
+    =
+    \int_{\Omega_e}
+    \phi^i\phi^j\,dx.
+\end{equation}
+
+Since both basis functions are linear, their product is a polynomial of degree two. A two-point Gauss rule therefore evaluates the $P_1$ mass matrix exactly.
+
+The diffusion matrix contains
+
+\begin{equation}
+    (K_e)_{ij}
+    =
+    \int_{\Omega_e}
+    D
+    \frac{\partial\phi^i}{\partial x}
+    \frac{\partial\phi^j}{\partial x}
+    \,dx.
+\end{equation}
+
+For $P_1$ elements, both derivatives are constant within an element. The integrand is therefore of degree zero, and a one-point Gauss rule is sufficient when $D$ is constant.
+
+A term containing the product of three $P_1$ approximations, such as
+
+\begin{equation}
+    T_{ijk}
+    =
+    \int_{\Omega_e}
+    \phi^i\phi^j\phi^k\,dx,
+\end{equation}
+
+has polynomial degree three. It is therefore also integrated exactly by a two-point Gauss rule.
+
+When the integrand contains non-polynomial functions, exact integration with a finite number of Gauss points is generally impossible. An example from the present model is the equation for absorption, which contains the logarithm of the gas density:
+
+\begin{equation}
+    \dot m
+    =
+    A
+    \log\left(
+    \frac{RT\rho_g}{p_{eq,a}}
+    \right)
+    \left(
+    \rho_{sat}-\rho_s
+    \right).
+\end{equation}
+
+Even when $\rho_g$ and $\rho_s$ are represented by polynomial finite element functions, the logarithm makes the complete integrand non-polynomial. In this case, the quadrature order must be chosen sufficiently high such that further increasing it has a negligible effect on the numerical solution.
+
+% \clearpage

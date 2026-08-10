@@ -1,0 +1,89 @@
+\section{Battery integration}
+For calculating the absorbed/desorbed amount of energy in a battery, I had to integrate over the domain. I found an easier way to tackle this problem by using the mass matrix and fem indeces already calculated in the spacial discretization. Below is a quick description of this method, which I could not really find a logical place in my thesis for, apart from the appendix.
+
+The amount of absorbed gas stored in the solid phase is obtained by integrating the solid density over the domain:
+\begin{equation}
+M_s(t)=\int_{\Omega}\rho_s(x,t)\,dx .
+\end{equation}
+The finite element approximation of the solid density is
+\begin{equation}
+\rho_s^n(x)=\sum_{i=1}^{N_s} \rho_s^{n,i}\phi_i(x),
+\end{equation}
+where $N_s$ is the number of solid density degrees of freedom and
+$\phi_i$ are the finite element basis functions. Therefore,
+\begin{equation}
+M_s^n
+=
+\int_{\Omega}
+\sum_{i=1}^{N_s}\rho_s^{n,i}\phi_i(x)\,dx .
+\end{equation}
+Rearranging the summation gives
+\begin{equation}
+M_s^n
+=
+\sum_{i=1}^{N_s}
+\rho_s^{n,i}
+\int_{\Omega}\phi_i(x)\,dx .
+\end{equation}
+The integral of each basis function is obtained from the consistent mass matrix.
+The mass matrix is defined as
+\begin{equation}
+(M_s)_{ij}
+=
+\int_{\Omega}\phi_i(x)\phi_j(x)\,dx .
+\end{equation}
+Multiplying the mass matrix by a vector of ones gives
+\begin{equation}
+b_i
+=
+\sum_{j=1}^{N_s}(M_s)_{ij}
+=
+\sum_{j=1}^{N_s}
+\int_{\Omega}\phi_i(x)\phi_j(x)\,dx .
+\end{equation}
+Since the finite element basis satisfies the partition of unity,
+\begin{equation}
+\sum_j\phi_j(x)=1,
+\end{equation}
+this becomes
+\begin{equation}
+b_i
+=
+\int_{\Omega}\phi_i(x)\,dx .
+\end{equation}
+The total absorbed mass at timestep $n$ is therefore approximated by
+\begin{equation}
+M_s^n
+\approx
+\sum_{i=1}^{N_s}b_i\rho_s^{n,i}
+=
+\mathbf{b}^T\boldsymbol{\rho}_s^n .
+\end{equation}  
+The maximum possible absorbed mass corresponds to a completely saturated
+solid phase:
+\begin{equation}
+M_{\mathrm{sat}}
+=
+\int_{\Omega}\rho_{\mathrm{sat}}\,dx
+=
+\rho_{\mathrm{sat}}|\Omega|,
+\end{equation}
+where $|\Omega|$ is the domain length (equal to $1$ in the current model).
+The filling fraction of the solid storage capacity is then defined as
+\begin{equation}
+f^n
+=
+\frac{M_s^n}{M_{\mathrm{sat}}}
+=
+\frac{\mathbf{b}^T\boldsymbol{\rho}_s^n}
+{\rho_{\mathrm{sat}}|\Omega|}.
+\end{equation}
+A value of
+\begin{equation}
+f^n=0
+\end{equation}
+corresponds to an empty solid phase, while
+\begin{equation}
+f^n=1
+\end{equation}
+corresponds to a completely saturated solid phase.

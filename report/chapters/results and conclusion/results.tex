@@ -2,21 +2,116 @@
 Ik ben nog niet blij met dit gedeelte, maar ik heb het even zo gelaten. Wil graag andere plotjes maken voor de resultaten, heb tot nu toe alleen de mooie gifjes, maar die kunnen natuurlijk niet in de rapportage. Wil binnenkort alles opnieuw runnen en dan measures maken voor bijvoorbeeld percentage opgenomen waterstof, en dan een plotje maken van de hoeveelheid opgenomen waterstof in de tijd. Dat is denk ik een mooi resultaat. Doet Darcy ook. Maar voor nu snapshots van de plotjes:
 
 \subsection*{Model 1}
-For the first model of the perfectly stirred reactor, we can see the results in Figure~\ref{fig:model_one_result}. The density of the hydrogen gas decreases over time, while the density of the metal hydride increases over time. You see the rate of absorption decreasing over time, this is an effect of $\rho_g$ becoming smaller, and $\rho_s$ becoming larger. 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.6\textwidth]{figures/rho_plot.png}
-    \caption{Plot of $\rho$ and $\rho_{sat}$ over time.}\label{fig:model_one_result}
-\end{figure}
+We ran the first model 4 times. Twice for absorption, where in one iteration we assumed a constant gas density, and in the other iteration we assumed a variable gas density. The results of these two iterations are shown in Figure~\ref{fig:model1_absorption_comparison_absorption}. The numerical solution is compared with the analytical solution for the constant gas density case, and the solid density and gas density are shown for the variable gas density case. We applied the same two iterations for desorption, and the results are shown in Figure~\ref{fig:model1_absorption_comparison_desorption}. 
 
-\subsection*{Model 2}
-The results of this model after half a second are shown in Figure~\ref{fig:model_2_results}.
+As we see the cases where the case where we have an analytical solution, the numerical solution matches the analytical solution very well. The cases where we have a variable gas density show that the gas density decreases over time, while the solid density increases over time. For absorption with a constant gas density, we see that the battery is fully saturated (has a filled fraction larger then $0.999$) after $xxx$ seconds, while for absorption with a variable gas density, we see that the battery is fully saturated after $xxx$ seconds. For desorption with a constant gas density, we see that the battery is fully desaturated (has a filled fraction smaller then $0.001$) after $xxx$ seconds, while for desorption with a variable gas density, we see that the battery is fully desaturated after $xxx$ seconds. 
+
+The first results have been done with a porosity of $\epsilon=0.4$. We have also run the model with a porosity of $\epsilon=0.5$ and $\epsilon=0.6$. The results are shown in Figure~\ref{fig:model1_epsilon_comparison}. We see that the higher the porosity, the faster the battery is saturated, but the lower the total solid density. This is because a higher porosity means that there is more space for the gas to occupy, which means that there is less space for the solid to occupy.
+
+Lastly we made a plot of the time step size of the automatic solver for model 1. The results are shown in Figure~\ref{fig:model_1_variable_gas_desorption}. We see that the time step size increases as the model reaches a steady state where $|d\mathbf{u}/dt|$ becomes smaller and smaller. This is because the automatic solver adjusts the time step size based on the rate of change of the solution, and as the solution approaches a steady state, the rate of change decreases, allowing for larger time steps to be taken.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\textwidth]{figures/model_2_result.png}
-    \caption{Results at $t=0.5$}\label{fig:model_2_results}
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/model_1_constant_gas_absorption.png}
+        \caption{Absorption assuming a constant gas density. The numerical solution is compared with the analytical solution.}\label{fig:model1_constant_gas_absorption}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/model_1_variable_gas_absorption.png}
+        \caption{Absorption with a variable gas density. The solid density is shown on the left axis and the gas density on the right axis.}\label{fig:model1_variable_gas_absorption}
+    \end{subfigure}
+    \caption{Comparison of Model 1 under constant and variable gas density assumptions.}\label{fig:model1_absorption_comparison_absorption}
 \end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/model_1_constant_gas_desorption.png}
+        \caption{Absorption assuming a constant gas density. The numerical solution is compared with the analytical solution.}\label{fig:model1_constant_gas_desorption}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/model_1_variable_gas_desorption.png}
+        \caption{Absorption with a variable gas density. The solid density is shown on the left axis and the gas density on the right axis.}\label{fig:model1_variable_gas_desorption}
+    \end{subfigure}
+    \caption{Comparison of Model 1 under constant and variable gas density assumptions.}\label{fig:model1_absorption_comparison_desorption}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/model_1_epsilon_gas.png}
+        \caption{Total gas density of the first model given different values of epsilon during absorption. Total gas density is the density of gas multiplied by its porosity $\epsilon$. Other values are taken from the standard Nomenclature table}\label{fig:model1_epsilon_gas}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/model_1_epsilon_solid.png}
+        \caption{Total solid density of the first model given different values of epsilon during absorption. Total solid density is the density of the solid multiplied by $1-\epsilon$. Other values are taken from the standard Nomenclature table}\label{fig:model1_epsilon_solid}
+    \end{subfigure}
+    \caption{Compariston of different values of porosity $\epsilon$ during charging of the battery. Higher porosity of the gas means lower total saturation density of the solid, but a faster charge rate.}\label{fig:model1_epsilon_comparison}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.49\textwidth]{figures/model_1_time_step_size.png}
+    \caption{Time step size of the automatic solver for model 1. You can see the time step size increasing as the model reaches a steady state where $
+    |d\mathbf{u}/dt|$ becomes smaller and smaller.}\label{fig:model_1_variable_gas_desorption}
+\end{figure}
+
+\subsection*{Model 2}
+For model 2 we first use a variable set with low Peclet number. This is less realistic, but it is a good test case to see if the model works.
+
+Figure~\ref{fig:model2_peclet_comparison} compares snapshots of the gas and solid densities at $t=0.5s$ for two different Peclet numbers. In both cases, $v=1.0m/s$ and $h=0.01m$. In Figure~\ref{fig:model2_low_peclet}, the diffusion coefficient is $\mu=0.01m^2/s$, corresponding to $\mathrm{Pe}=1.0$. The gas-density profile remains smooth, while the solid density increases in the regions where the gas density is higher. Figure~\ref{fig:model2_high_peclet} shows the result for $\mu=10^{-5}$, corresponding to $\mathrm{Pe}=1000$, with the DAE time integration. At this high Peclet number, oscillations appear in the gas-density solution because SUPG stabilization has not yet been applied. Since the IMEX method uses the, in this model, convection term as fully implicit it does not seem to create oscillations.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/model_2_result_low_Peclet.png}
+\caption{Result for $\mathrm{Pe}=1.0$, with $v=1.0$, $h=0.01$, and $\mu=0.01$.}
+\label{fig:model2_low_peclet}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/model_2_result_high_Peclet.png}
+\caption{Result for $\mathrm{Pe}=1000$, with $v=1.0$, $h=0.01$, and $\mu=10^{-5}$.}
+\label{fig:model2_high_peclet}
+\end{subfigure}
+\caption{Gas and solid densities at $t=0.5$ for low and high Peclet numbers.}
+\label{fig:model2_peclet_comparison}
+\end{figure}
+
+Figure~\ref{fig:model2_saturation_comparison} shows the evolution of the solid saturation at different positions in the domain, together with the spatially averaged saturation. For the low-Peclet-number case with non-realistic parameter values, shown in Figure~\ref{fig:model2_low_pe_dae}, the saturation at the inlet follows the analytical solution from Model~1 for a constant gas density. This happens because the gas density at the inlet is our constant boundary condition, and it therefor acts as a Model~1 with constant gas density. The saturation at $x=L$ responds later, while the average saturation remains between the inlet and outlet values. With the realistic parameters and SUPG stabilization, shown in Figure~\ref{fig:model2_realistic_dae_supg}, the filling time increases from approximately $3s$ to approximately $200s$. The saturation curves at the different positions are then nearly identical. This is because, although the velocity is only $v=0.1m/s$, the gas fills the metre long domain in approximately $10s$, which is much shorter than the characteristic absorption time. Thus, the gas density becomes distributed throughout the domain before a substantial amount of gas is absorbed, and Model~1 provides a reasonable approximation for this case. Initially, this might seem like the gas velocity has little impact. However, it is important to note that temperature has not yet been included. Absorption generates heat, and the resulting temperature increase reduces the absorption rate. Because velocity transports the temperature with the gas, the velocity will play a big role if temperature is included..
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/model_2_result_low_Pe_DAE.png}
+\caption{Solid saturation at different positions for the low-Peclet-number case with non-realistic parameter values.}
+\label{fig:model2_low_pe_dae}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/model_2_result_realistic_DAE_SUPG.png}
+\caption{Solid saturation at different positions for the realistic parameter set with SUPG stabilization.}
+\label{fig:model2_realistic_dae_supg}
+\end{subfigure}
+\caption{Evolution of the solid saturation at different positions and of the spatially averaged saturation.}
+\label{fig:model2_saturation_comparison}
+\end{figure}
+
+\clearpage
+\newpage
 
 \subsection*{Model 3}
 The results of this model after one second are shown in Figure~\ref{fig:model_3_result}.

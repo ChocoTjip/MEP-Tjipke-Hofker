@@ -1,100 +1,144 @@
 \subsection{Time Integration}\label{subseq:time_integrations}
-In this section we will be looking at how we use time integration on our semi-discretized matrix vector $\mathbf{u}$. This form is 
 
-\subsubsection*{Linear Form}
-In this section we look at the different ways to solve a semi-discretized problem in the (simplified) form:
+In the previous section, the governing partial differential equations were spatially discretized. This transformed Equation~\ref{eq:general_pde_numerical_methods} into the semi-discrete system given by Equation~\ref{eq:semi_discrete_numerical_methods}. The spatial dependence is therefore represented by a finite number of degrees of freedom, while time remains continuous. The purpose of time integration is to transform this semi-discrete system into a system that can be solved at discrete points in time. That is what we will be tackling in this section. A few methods that we later apply will be described here.
 
-\begin{equation}\label{eq:time_int}
-    M \partial_t \mathbf{u} = L[\mathbf{u}]+N(\mathbf{u})
+The simplest time integration methods are the forward and backward Euler methods. The forward Euler method is an explicit method, while the backward Euler method is an implicit method. Implicit is more accurate but computationally more expensive for non-linear problems, as it requires solving a system of equations at each time step. Explicit is easier to compute but less accurate, and requires smaller time steps for stability. Initially I wrote a combined method that uses implicit for linear terms and explicit for non-linear terms. This is an IMEX method, which we will describe in Section~\ref{subsubsec:num_IMEX}.
+
+For our methods where the time-dependency is written in the form $Md\mathbf{u}/dt = \mathbf{f}(\mathbf{u},t)$, we can use the builtin Julia \texttt{Rodas5P} function. This method is an implicit fifth-order Rosenbrock--Wanner method, which we will briefly describe in Section~\ref{subsubsec:num_ROW}.
+
+For our models with a time dependent mass matrix, say if it depends on the density at that $x$, we cannot easily write it in the system that is compatible with \texttt{Rodas5P}. In this case, we can use the \texttt{IDA} function from the \texttt{Sundials.jl} package. This method is a variable-step, variable-order backward differentiation formula method, which is designed for fully implicit differential-algebraic systems.
+
+Lastly, the time-integration method used together with \texttt{MethodOfLines.jl} is discussed. This package is used to obtain finite-difference reference solutions for Models~4 and~5 at sufficiently low P\'eclet numbers. After the spatial discretization has been generated, the resulting system is integrated using the \texttt{Tsit5} method. The Tsitouras method is an explicit fifth-order Runge--Kutta method with an embedded fourth-order error estimator. The embedded estimator allows the local temporal error to be estimated and the time-step size to be adjusted automatically. Since it is an explicit method intended primarily for non-stiff systems, it is used here for the validation cases in which the semi-discrete equations can be integrated efficiently without requiring a stiff solver.
+
+\subsubsection{Implicit--Explicit (IMEX) Method}\label{subsubsec:num_IMEX}
+
+Implicit methods are generally more accurate than explicit methods, but for non-linear problems they require solving a system of equations at each time step, which can be computationally expensive. The most famous example of an implicit method of a system is the backward Euler method. Given a system of ordinary differential equations in the form $M \dot{\mathbf{u}} = \mathbf{f}(\mathbf{u},t)$ (with $\dot{\mathbf{u}}=du/dt$), we apply backwards integration:
+
+\begin{equation}
+    \frac{M\mathbf{u}^{n+1} - M\mathbf{u}^n}{\Delta t}= \mathbf{f}(\mathbf{u}^{n+1},t^{n+1}),
+\end{equation}
+Which we can rewrite as:
+
+\begin{equation}
+M\mathbf{u}^{n+1} = M\mathbf{u}^{n} + \Delta t \mathbf{f}(\mathbf{u}^{n+1},t^{n+1}),
+\end{equation}
+where $\mathbf{u}^{n}$ is the solution at time $t^{n}$, $\Delta t$ is the time step size. The backward Euler method is unconditionally stable, but it can be computationally expensive for non-linear problems because it requires solving a system of equations at each time step. If $f$ is linear, the system becomes the simple:
+\begin{equation}
+(M-\Delta t A)\mathbf{u}^{n+1} = M\mathbf{u}^{n},
+\end{equation}
+where $A$ is the matrix representation of the linear operator. This can be solved directly by calculating $\mathbf{u^{n+1}}=(M-\Delta t A)^{-1}M\mathbf{u}^{n}$. But if $f$ is non-linear, we need to use an iterative method such as Newton's method to solve for $\mathbf{u}^{n+1}$, so the implicit method requires more work. 
+
+The most famous example of an explicit method is the forward Euler method. Given a system of ordinary differential equations in the form $M\dot{\mathbf{u}} = \mathbf{f}(\mathbf{u},t)$, we apply forward integration:
+
+\begin{equation}
+    \frac{M\mathbf{u}^{n+1} - M\mathbf{u}^n}{\Delta t}= \mathbf{f}(\mathbf{u}^{n},t^{n}),
+\end{equation}
+Which we can rewrite as:
+\begin{equation}
+M\mathbf{u}^{n+1} = M\mathbf{u}^{n} + \Delta t \mathbf{f}(\mathbf{u}^{n},t^{n}),
+\end{equation}
+The forward Euler method is conditionally stable, which means that it requires a sufficiently small time step size to be stable. The stability condition is given by the Courant--Friedrichs--Lewy (CFL) condition, which states that the time step size must be less than or equal to the spatial grid size divided by the maximum wave speed in the system. The IMEX method combines the best of both worlds by using an implicit method for the linear terms and an explicit method for the non-linear terms. This allows for larger time steps while still maintaining some stability and accuracy. For a problem written as:
+\begin{equation}
+M\dot{\mathbf{u}} = A\mathbf{u} + \mathbf{f}(\mathbf{u},t),
+\end{equation}
+the IMEX method becomes:
+\begin{equation}
+(M-\Delta t A)\mathbf{u}^{n+1} = M\mathbf{u}^{n} + \Delta t \mathbf{f}(\mathbf{u}^{n},t^{n}),
+\end{equation}
+which is again easily solvable. This method especially worked well in model 2 and 3, where a large part of the physics that typically cause stiffness or instability are linear, and the non-linear terms are less stiff (the absorption and desorption of the hydrogen gas).
+
+\subsubsection{Linear-Implicit Newton}
+
+In the previous section we looked at how we can construct an implicit method from linear terms, and an explicit method from non-linear terms. If the problem has non-linear terms that form unstable integrations using explicit methods, we need to look at how to solve this implicitly as well. The backwards Euler method is (for what I can tell), the cornerstone of these implicit solvers, and many other such methods are alterations during the linear solve step or time step but follow the same principles (like the ROW method that we will be looking at in the next section). That is why I dedicate a section to this solver (even if we do not directly use it).
+
+As per our previous example we have a discretization of the form:
+
+\begin{equation}\label{eq:num_linear-implicit-newton_Mdotu}
+    M\dot {\mathbf{u}} = \mathbf{f}(\mathbf{u},t)
 \end{equation}
 
-where $M$ is a linear Mass Matrix, $\mathbf{u}$ is the spacially discretized control vector, with elements as
+when using backward euler we evaluate all $u$ terms at the next time step. Leading to the a `residual equation' of the form:
+\begin{equation}\label{eq:num_res_implicit_euler}
+    \mathbf{R}(\mathbf{u}^{n+1}) = M(\mathbf{u}^{n+1} - \mathbf{u}^{n}) - \Delta t \mathbf{f}(\mathbf{u}^{n+1},t^{n+1}) = 0
+\end{equation}
+which is a non-linear system of equations. To solve this we use Newtons method. This is an iterative method for finding $u^{n+1}$ such that the residual is (very close to) zero. We start with an initial guess for $u^{n+1}$, which we call $u^{n+1}_0$. Say, $u^{n+1}_0 = u^n$.  This gives us a residual $R(u^{n+1}_0)$. We then linearize the residual around this guess, and solve for a correction $\delta u$ such that:
+\begin{equation}
+    \mathbf{R}(\mathbf{u}^{n+1}_0 + \delta \mathbf{u}) \approx \mathbf{R}(\mathbf{u}^{n+1}_0) + J_R(\mathbf{u}^{n+1}_0) \delta \mathbf{u} = 0
+\end{equation}
+where $J_R$ is the Jacobian of the residual with respect to $u^{n+1}$. This gives us a linear system of equations to solve for $\delta u$:
+\begin{equation}
+    J_R(\mathbf{u}^{n+1}_0) \delta \mathbf{u} = -\mathbf{R}(\mathbf{u}^{n+1}_0)
+\end{equation}
+We then update our guess:
+\begin{equation}\label{eq:num_step_update_implicit_euler}
+    \mathbf{u}^{n+1}_1 = \mathbf{u}^{n+1}_0 + \delta \mathbf{u}
+\end{equation}
+and repeat the process until convergence. If we know the Jacobian of $f$ with respect to $u$, $J_f$, we can compute the Jacobian of the residual, Equation~\ref{eq:num_res_implicit_euler}, as:
+\begin{equation}\label{eq:num_jacobian_residual_implicit_euler}
+    J_R(\mathbf{u}^{n+1}) = M - \Delta t J_f(\mathbf{u}^{n+1},t^{n+1})
+\end{equation}
+and we can rewrite Equation~\ref{eq:num_step_update_implicit_euler} as:
+\begin{equation}
+    \mathbf{u}^{n+1}_1 = \mathbf{u}^{n+1}_0 - J_R(\mathbf{u}^{n+1}_0)^{-1} \mathbf{R}(\mathbf{u}^{n+1}_0)
+\end{equation}
+now we repeat until the residual is sufficiently small, or it is sufficiently small wrt the solution. One more important note is that the time step $\Delta t$ in Equation~\ref{eq:num_jacobian_residual_implicit_euler} is often written in literature (especially literature for Julia) as $\gamma$. And the jacobian of the residual is $W$. Giving:
+\begin{equation}
+    W = M-\gamma J_f
+\end{equation}
 
-\subsubsection*{Battery integration}
-The amount of absorbed gas stored in the solid phase is obtained by integrating
-the solid density over the domain:
+\subsubsection{Rosenbrock--Wanner (ROW) method}\label{subsubsec:num_ROW}
+
+In the previous section we looked at implicit time integration for non-linear terms using backward Euler. 
+
+\subsubsection{Implicit Differential-Algebraic (IDA) Methods}\label{subsubsec:num_IDA}
+
+In our applications of Navier-Stokes, we have $\rho \dot{\mathbf{v}}$ at the left hand side as the momentum term, which gives us a density-dependent mass matrix. Since the control vector contains both $\rho$, and $\mathbf{v}$, we end up with a left hand side of the form $M(\mathbf{u})\dot{\mathbf{u}}$. The main issue with going about this problem in the same way as the previous sections, is that it requires a linear solve involving the state-dependent $M$ every time the RHS is evaluated, and it fails as an explicit reformulation if $M$ is singular. A method that would not need this extra linear solve are methods that look at a DAE (set of Differential Algebraic Equation). This can be viewed as a generalized backward Euler method, where we do not seperate partial derivatives wrt time to the lhs, and the rest to the rhs. It gives a very powerfull tool to solve any combination of differential and algebraic equations. In this section we will explain the mathematics stated in the sundials website\footnote{\url{https://sundials.readthedocs.io/en/latest/ida/Mathematics_link.html}} and their documentation for Julia\footnote{\url{https://docs.sciml.ai/DiffEqDocs/stable/types/dae_types/}}
+
+
+The main idea is to write the residual as a function of not only $u$, but also $\dot{u}$:
+
 \begin{equation}
-M_s(t)=\int_{\Omega}\rho_s(x,t)\,dx .
+    R(\mathbf{u},\dot{\mathbf{u}}) = M(\mathbf{u})\dot{\mathbf{u}} - \mathbf{f}(\mathbf{u},t) = 0
 \end{equation}
-The finite element approximation of the solid density is
+
+To create an algorithm for solving for $\mathbf{u}^{n+1}$, we need a current state vector $\mathbf{u}^n$, a current derivative $\dot{\mathbf{u}}^n$, and an approximation for $\dot{\mathbf{u}}^{n+1}$. IDA approximates the derivative as a linear combination of the current and previous values of $\mathbf{u}$, which becomes (for order $q$):
+
 \begin{equation}
-\rho_s^n(x)=\sum_{i=1}^{N_s} \rho_s^{n,i}\phi_i(x),
+    \sum_{i=0}^q\alpha_{i}^n\mathbf{u}^{n-i}=h_n\dot{\mathbf{u}}^n,
 \end{equation}
-where \(N_s\) is the number of solid density degrees of freedom and
-\(\phi_i\) are the finite element basis functions. Therefore,
+where $h_n$ is the step size, and the coefficients $\alpha_{i}^n$ are uniquely determined by the order and previous step sizes. For now we take a simple first order which corresponds to backwards Euler:
 \begin{equation}
-M_s^n
-=
-\int_{\Omega}
-\sum_{i=1}^{N_s}\rho_s^{n,i}\phi_i(x)\,dx .
+    \frac{1}{h_n}(\mathbf{u}^{n}-\mathbf{u}^{n-1})=\dot{\mathbf{u}}^n,
 \end{equation}
-Rearranging the summation gives
+where we are more familiar with the notation $h_n = \Delta t_n$. Usually the term before $\mathbf{u}^n$ is $\alpha_0^n/h_n$, which is substituted by $\gamma_n$ in the documentation. For first order, $\gamma_n = 1/h_n$. Now at timestep $n-1$, we solve for timestep $n$ by implicitly evaluating the residual function: 
 \begin{equation}
-M_s^n
-=
-\sum_{i=1}^{N_s}
-\rho_s^{n,i}
-\int_{\Omega}\phi_i(x)\,dx .
+    R(\mathbf{u}^{n},\gamma_n(\mathbf{u}^{n}-\mathbf{u}^{n-1})) = 0, 
 \end{equation}
-The integral of each basis function is obtained from the consistent mass matrix.
-The mass matrix is defined as
+to solve this using Newton method again we may also need the Jacobian of the residual function with respect to $\mathbf{u}^n$. Since $R$ has two arguments, we use the chain rule to get:
+
 \begin{equation}
-(M_s)_{ij}
-=
-\int_{\Omega}\phi_i(x)\phi_j(x)\,dx .
+    J_R(\mathbf{u}^n) = \frac{dR(\mathbf{u}^{n}, \dot{\mathbf{u}}^{n})}{d\mathbf{u}^{n}} = \frac{\partial R}{\partial \mathbf{u}} + \frac{\partial R}{\partial \dot{\mathbf{u}}} \frac{\partial \dot{\mathbf{u}}}{\partial \mathbf{u}^{n}} = \frac{\partial R}{\partial \mathbf{u}} + \gamma_n \frac{\partial R}{\partial \dot{\mathbf{u}}}
 \end{equation}
-Multiplying the mass matrix by a vector of ones gives
+
+A quick example, say the residual function of a two dimensional time-dependent vector $\mathbf{u} = \begin{pmatrix}u_1 \\ u_2 \end{pmatrix}$ is given by:
+
 \begin{equation}
-b_i
-=
-\sum_{j=1}^{N_s}(M_s)_{ij}
-=
-\sum_{j=1}^{N_s}
-\int_{\Omega}\phi_i(x)\phi_j(x)\,dx .
+    R(\mathbf{u},\dot{\mathbf{u}}) = \begin{pmatrix}u_2 & 0 \\ 0 & 1\end{pmatrix}\begin{pmatrix}\dot{u}_1 \\ \dot{u}_2\end{pmatrix} - \begin{pmatrix}u_1^2 \\ u_2^2\end{pmatrix}
 \end{equation}
-Since the finite element basis satisfies the partition of unity,
+gives the partial derivatives (the rest are $0$):
 \begin{equation}
-\sum_j\phi_j(x)=1,
+    \begin{aligned}
+        \frac{\partial R_1}{\partial u_1} & = -2u_1, \\
+        \frac{\partial R_1}{\partial u_2} & = \dot{u}_1, \\
+        \frac{\partial R_2}{\partial u_2} & = -2u_2, \\
+        \frac{\partial R_2}{\partial \dot{u}_1} & = u_2, \\
+        \frac{\partial R_2}{\partial \dot{u}_2} & = 1
+    \end{aligned}
 \end{equation}
-this becomes
+which gives the Jacobian of the residual function as:
+
+
 \begin{equation}
-b_i
-=
-\int_{\Omega}\phi_i(x)\,dx .
+    J_R(\mathbf{u}) = \frac{\partial R}{\partial \mathbf{u}} + \gamma_n \frac{\partial R}{\partial \dot{\mathbf{u}}} = \begin{pmatrix} -2u_1 & \dot{u}_1 \\ 0 & -2u_2 \end{pmatrix} + \gamma_n \begin{pmatrix} u_2 & 0 \\ 0 & 1 \end{pmatrix} = \begin{pmatrix} \gamma_n u_2 - 2u_1 & \dot{u}_1 \\ 0 & \gamma_n - 2u_2 \end{pmatrix}
 \end{equation}
-The total absorbed mass at timestep \(n\) is therefore approximated by
-\begin{equation}
-M_s^n
-\approx
-\sum_{i=1}^{N_s}b_i\rho_s^{n,i}
-=
-\mathbf{b}^T\boldsymbol{\rho}_s^n .
-\end{equation}  
-The maximum possible absorbed mass corresponds to a completely saturated
-solid phase:
-\begin{equation}
-M_{\mathrm{sat}}
-=
-\int_{\Omega}\rho_{\mathrm{sat}}\,dx
-=
-\rho_{\mathrm{sat}}|\Omega|,
-\end{equation}
-where \(|\Omega|\) is the domain length (equal to \(1\) in the current model).
-The filling fraction of the solid storage capacity is then defined as
-\begin{equation}
-f^n
-=
-\frac{M_s^n}{M_{\mathrm{sat}}}
-=
-\frac{\mathbf{b}^T\boldsymbol{\rho}_s^n}
-{\rho_{\mathrm{sat}}|\Omega|}.
-\end{equation}
-A value of
-\begin{equation}
-f^n=0
-\end{equation}
-corresponds to an empty solid phase, while
-\begin{equation}
-f^n=1
-\end{equation}
-corresponds to a completely saturated solid phase.
+where we should keep in mind this is the Jacobian for the IDA method of order 1. Higher orders change the coefficients $\alpha_i^n$ and $h_n$, but the principle remains the same. IDA can compute the Jacobians automatically using automatic differentiation as well. 

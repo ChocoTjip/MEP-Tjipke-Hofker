@@ -1,43 +1,52 @@
 \subsection{Model 1: 0D Density Based Adsorption}\label{subseq:model_1}
 
-As a first step, we look at `0D' absorption and desorption (perfectly mixed system). In this model we will assume that the density is a measure for the percentage of hydrogen gas in the air, and we will assume that the pressure is uniform over the system (so if hydrogen is adsorbed, the density decreases, but the pressure stays the same). If we look at Equation~XXX, we can see that a lot of the terms are not relevant for this model, however, since it assumes pure hydrogen gas, we assume it scales linearly with the ration of hydrogen gas in the air, becomming:
-\begin{equation}\label{eq:model_1_mdot}
-    \dot m = A \rho (\rho_{sat}-\rho_s(t)),
-\end{equation}
-where $\rho$ is the density at that point and $\rho_s$ is the saturation of the metal. The model can be summarized into the following system of equations:
+As a first step, we look at `0D' absorption and desorption (perfectly mixed system). All physics for this model has been explained in Section 2.3. We will quickly be repeating the equations here for clarity. We want to model adsorption and desorption, given respectively by the following equations:
+\begin{align}\label{eq:model_1_mdot}
+     m = A_a \log \big(\frac{RT\rho_g}{p_0}\big) (\rho_{sat}-\rho_s(t)), \\
+     m = A_d (1-\frac{RT\rho_g}{p_{eq,d}})(\rho_s(t)-\rho_e)
+\end{align}
+where $\rho_g$ is the density of the hydrogen gas per free volume at that point and $\rho_s$ is the saturation of the metal, $\rho_e$ is the empty solid density, $A_a$ and $A_d$ are the adsorption and desorption coefficients, respectively. The total model becomes:
 \begin{equation}\label{eq:model_1}
 \left\{\begin{aligned}
-    \partial_t\rho&=-\dot m_a(\rho, \rho_s) \\
-    \partial_t\rho_s&=\dot m_a(\rho, \rho_s)
+    \epsilon\dot{\rho}_g&=- m_a(\rho_g, \rho_s) \\
+    (1-\epsilon)\dot{\rho}_s&= m_a(\rho_g, \rho_s)
 \end{aligned}\right.
 \end{equation}
-where our control variable is $\mathbf{u} = \begin{pmatrix}
-    \rho \\ \rho_s
+where $\epsilon$ is the porosity, and our control variable is $\mathbf{u} = \begin{pmatrix}
+    \rho_g \\ \rho_s
 \end{pmatrix}$
-Under initial condition (since there are no advection/diffusion/movement we do not look at bc)
+For absorption, we consider initial condition:
 \begin{equation}
-    \mathbf{u}(0) = \begin{pmatrix}1 \\ 0\end{pmatrix} \\
+    \mathbf{u}(0) = \begin{pmatrix}\rho_{g, f} \\ \rho_{e}\end{pmatrix} \\
 \end{equation}
+and for desorption, we consider initial condition:
+\begin{equation}
+    \mathbf{u}(0) = \begin{pmatrix}\rho_{g, f} \\ \rho_{sat}\end{pmatrix} \\
+\end{equation}
+
+We do not need to impose boundary conditions, as this is a 0D model, but we are interested in two scenarios: first how the gas density changes and the solid density changes, which we can use later on when we have models of more than zero dimensions. But if we are curious as to how a perfectly stirred reactor behaves, it is logical to look at a system where the gas density is constant. This latter model is also analytically solvable, and will therefore also give a good analysis of our accuracy. 
+
+We will be running both above models for absorption and desorption.
 
 \subsubsection*{Time Integration}
 For our IMEX method as described in Section~\ref{subseq:time_integrations}, we discretize $\mathbf{u}$ into $N$ timesteps of size $\Delta t$; $\mathbf{u}^n\approx\mathbf{u}(n*\Delta t)$. Now we can apply forward euler, and see the non-linear part as:
 
 \begin{equation*}
-\mathbf{u}^{n+1}=\mathbf{u}^n +\begin{pmatrix} -\dot{m}_a(\mathbf{u})\\ \dot{m}_a(\mathbf{u})\end{pmatrix} \Delta t  
+\mathbf{u}^{n+1}=\mathbf{u}^n +\begin{pmatrix} -{m}_a(\mathbf{u})\\ {m}_a(\mathbf{u})\end{pmatrix} \Delta t  
 \end{equation*}
-where we evaluat the $\dot m(\mathbf{u}^n)$ each timestep according to Equation~\ref{eq:model_1_mdot}. The other time integration methods can be applied immedeately from combining Equations~\ref{eq:model_1}, and~\ref{eq:time_int} to see that:
+where we evaluate the $ m(\mathbf{u}^n)$ each timestep according to Equation~\ref{eq:model_1_mdot}. The other time integration methods can be applied immediately from combining Equations~\ref{eq:model_1}, and~\ref{eq:time_int} to see that:
 \begin{equation}
     \begin{aligned}
         M &= I \\
         L &= 0 \\
-        N(\mathbf u) &= \begin{pmatrix} -\dot{m}_a(\mathbf{u})\\ \dot{m}_a(\mathbf{u})\end{pmatrix} 
+        N(\mathbf u) &= \begin{pmatrix} -{m}_a(\mathbf{u})\\ {m}_a(\mathbf{u})\end{pmatrix} 
     \end{aligned}
 \end{equation}
 for some methods a Jacobean improves performance, this can be given by:
 \begin{equation}
     J[N(\mathbf{u})]=\begin{pmatrix}
-        -\frac{\partial \dot{m}_a}{\partial \rho} & -\frac{\partial \dot{m}_a}{\partial \rho_s}\\
-        \frac{\partial \dot{m}_a}{\partial \rho} & \frac{\partial \dot{m}_a}{\partial \rho_s}\\
+        -\frac{\partial {m}_a}{\partial \rho} & -\frac{\partial {m}_a}{\partial \rho_s}\\
+        \frac{\partial {m}_a}{\partial \rho} & \frac{\partial {m}_a}{\partial \rho_s}\\
     \end{pmatrix} = 
     \begin{pmatrix}
         -A(\rho_{sat}-\rho_s) & A\rho \\
@@ -45,3 +54,9 @@ for some methods a Jacobean improves performance, this can be given by:
     \end{pmatrix}
 \end{equation}
 applying either of the aforementioned methods gives the result for the perfectly stirred reactor.
+
+For the model where the gas density is constant, we can simply set $\rho_g = \rho_{g,f}$ and only integrate the solid density. This gives us a simple ODE:
+\begin{equation}
+    \dot{\rho}_s = m(\rho_{g,f}, \rho_s)
+\end{equation}
+and the jacobean is simply the derivative of $m$ with respect to $\rho_s$. 

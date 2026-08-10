@@ -1,6 +1,44 @@
 \section{Physics}\label{sec:physics}
 
-In this section we will be looking at some of the physics behind the equations we will be using in our models. We start by looking at the absorption and desorption of Metal Hydride Materials in Section~\ref{subsec:metal_hydrides}, and explain how we get to the absorption equations in our models. Then we will be looking at the flow of our Hydrogen gas in Section~\ref{subsec:flow_model}, as these will be the most important equations for our models.
+In this section we will be looking at some of the physics behind the equations we will be using in our models. We start by looking at the absorption and desorption of Metal Hydride Materials in Section~\ref{subsec:metal_hydrides}, and explain how we get to the absorption equations in our models. Then we will be looking at the flow of our Hydrogen gas in Section~\ref{subsec:flow_model}, as these will be the most important equations for our models. Because a lot of the equations use constant and variables, I made nomenclature in Table~\ref{tab:nomenclature} to keep track of all the variables and constants we will be using.
+
+\begin{table}[ht]
+    \centering
+    \caption{Nomenclature}
+    \label{tab:nomenclature}
+    \begin{tabular}{lll}
+        \hline
+        \textbf{Symbol} & \textbf{Name} & \textbf{Value [Unit]} \\
+        \hline
+        $\rho_g$ & Density of hydrogen gas in empty space & $[kg/m^3]$\\
+        $\rho_s$ & Density of absorbed hydrogen in the solid Metal Hydride & $[kg/m^3]$\\
+        $v$ & Flow speed of the hydrogen gas & $[m/s]$\\
+        $\epsilon$ & porosity of the metal hydride & $0.4, 0.5, 0.6$ \\
+        $C_a$ & Absorption rate constant & $59.187 \, [\mathrm{s^{-1}}]$\\
+        $C_d$ & Desorption rate constant & $9.57 \, [\mathrm{s^{-1}}]$\\
+        $E_a$ & Activation energy for absorption & $21179.6 \, [\mathrm{J/mol}]$\\
+        $E_d$ & Activation energy for desorption & $16473 \, [\mathrm{J/mol}]$\\
+        $R$ & Universal gas constant & $8.314 \, [\mathrm{J/(mol \, K)}]$\\
+        $T$ & Temperature & $300 \, [K]$\\
+        $p_p$ & Pressure of the hydrogen gas & $[Pa]$\\
+        $p_{eq,a}$ & Equilibrium pressure for absorption & $[Pa]$\\
+        $p_{eq,d}$ & Equilibrium pressure for desorption & $[Pa]$\\
+        $\rho_{sat}$ & Saturation density of the metal hydride & $7259\,[kg/m^3]$\\
+        $\rho_e$ & Initial density of an empty battery & $7165[kg/m^3]$\\
+        $\mu$ & Dynamic viscosity of the hydrogen gas & $8.4*10^{-6} \, [Pa \, s]$\\
+        $A_{h,a}$ & unitless constant for the van t Hoff equation for absorption & $10.7$\\
+        $A_{h,d}$ & unitless constant for the van t Hoff equation for desorption & $10.57$\\
+        $B_{h,a}$ & unitless constant for the van t Hoff equation for absorption & $3704.6 \, [K]$\\
+        $B_{h,d}$ & unitless constant for the van t Hoff equation for desorption & $3704.6 \, [K]$\\
+        $L$ & Length of the 1D battery & $1\,[m]$\\
+        $W$ & Width of the 2D battery & $1\,[m]$\\
+        $h_2$ & Height of the 2D battery & $1\,[m]$\\
+        $h_1$ & Height of inlet of 2D battery & $1\,[m]$\\
+        $D$ & Diffusion coefficient of the hydrogen gas & $[m^2/s]$\\
+
+        \hline
+    \end{tabular}
+\end{table}
 
 \subsection{Absorption and Desorption in Metal Hydride Materials}\label{subsec:metal_hydrides}
 
@@ -15,7 +53,7 @@ Where $M$ is the metal, $H_2$ is the hydrogen gas, and $MH_x$ is the metal with 
     \log( \frac{p_p}{p_{eq,a}} ) \, (\rho_{sat} - \rho_s(t)) \, ,\\
     \label{eq:phy_des}
     \dot m(\rho, \rho_s) &= C_d \exp(- \frac{E_d}{R \, T}) \,
-    (1 - \frac{p_p}{p_{eq,d}}) \, (\rho_s(t) - \rho_{e}) \, ,
+    (\frac{p_p}{p_{eq,d}} - 1) \, (\rho_s(t) - \rho_{e}) \, ,
 \end{align}
 where $C_a$ and $C_d$ are the absorption and desorption rate constants in $[\mathrm{s^{-1}}]$, $E_a$ and $E_d$ are the activation energies for absorption and desorption in $[\mathrm{J/mol}]$, $R$ is the universal gas constant in $[\mathrm{J/(mol \, K)}]$, $T$ is the temperature, $p_p$ is the pressure of the hydrogen gas, $p_{eq,a}$ and $p_{eq,d}$ are the equilibrium pressures for absorption and desorption, $\rho_{sat}$ is the saturation density of the metal hydride, $\rho_s(t)$ is the density of the metal hydride at time t, and $\rho_{e}$ is the initial density of an emptry battery.
 
@@ -32,7 +70,7 @@ In all our models we will assume constant temperature, and we will be looking at
     \label{eq:phy_dotm_abs}
     \dot m(\rho_g, \rho_s) &= A_a \log \left( \frac{p}{p_{eq,a}} \right)(\rho_{sat} - \rho_s(t)) \\
     \label{eq:phy_dotm_des}
-    \dot m(\rho_g, \rho_s) &= A_d \left( 1 - \frac{p}{p_{eq,d}} \right)( \rho_s(t) - \rho_o) \, ,
+    \dot m(\rho_g, \rho_s) &= A_d \left(\frac{p_p}{p_{eq,d}} - 1 \right)( \rho_s(t) - \rho_o) \, ,
 \end{align}
 for absorption and desorption respectively. Here $A_a$ and $A_d$ are constants that depend on the temperature, and the properties of the metal hydride, and are given by:
 \begin{align}
@@ -109,7 +147,7 @@ where $R$ is the specific gas constant for hydrogen, equal to $R = 8.314 \, \mat
 \begin{equation}
     p_{\mathrm{tot}} = p_g + \frac{1}{2}\rho_g |\mathbf{v}|^2,
 \end{equation}
-where $p_g$ is the static pressure and $\frac{1}{2}\rho_g|\mathbf{v}|^2$ is the dynamic pressure. In practice, the pressure supplied by a gas reservoir or pressure regulator corresponds to the total pressure of the flowing gas rather than its static pressure. Prescribing the total pressure therefore allows the static pressure at the inlet to decrease naturally when the gas velocity increases, while recovering the prescribed value when the flow is at rest. This provides a more realistic description of hydrogen entering the porous hydride bed, particularly during the initial stage of absorption when the inflow velocity is highest. Since the absorption kinetics depend on the static hydrogen pressure through the driving force $\ln(p_g/p_{eq})$, using a total pressure boundary condition results in a more physically consistent coupling between the inlet flow and the reaction rate.
+where $p_g$ is the static pressure and $\frac{1}{2}\rho_g|\mathbf{v}|^2$ is the dynamic pressure. In practice, the pressure supplied by a gas reservoir or pressure regulator corresponds to the total pressure of the flowing gas rather than its static pressure. Prescribing the total pressure therefore allows the static pressure at the inlet to decrease naturally when the gas velocity increases, while recovering the prescribed value when the flow is at rest. This provides a more realistic description of hydrogen entering the porous hydride bed, particularly during the initial stage of absorption when the inflow velocity is highest. Since the absorption kinetics depend on the static hydrogen pressure through the driving force $\log(p_g/p_{eq})$, using a total pressure boundary condition results in a more physically consistent coupling between the inlet flow and the reaction rate.
 
 \subsection{Model Assumptions}
 
@@ -120,14 +158,14 @@ We want to model everything until the battery is fully charged or fully discharg
 The governing equations described in the above sections form a coupled system describing the evolution of the hydrogen gas and the metal hydride. Depending on the model, the unknowns are the hydrogen gas density $\rho_g$, the hydrogen velocity $\mathbf{u}$, and the density of absorbed hydrogen in the metal hydride $\rho_s$. The governing equations consist of one mass conservation equation for $\rho_g$, one momentum equation for each velocity component, and one local evolution equation for $\rho_s$. Together with the constitutive relations for the mass transfer rate and the ideal gas law, the number of equations equals the number of unknowns, resulting in a closed system.
 
 \subsubsection*{Model 1: perfectly mixed battery}
-In our first model, we aim to compute the density of hydrogen gas $\rho_g$ in the battery, and the saturation of the metal hydride $\rho_s$. We do not yet aim to compute velocity of the gas and it is assumed that the flow is perfectly mixed. This gives us:
+In our first model, we aim to compute the density of hydrogen gas $\rho_g$ in the battery, and the saturation of the metal hydride $\rho_s$. We do not yet aim to compute velocity of the gas and it is assumed that the flow is perfectly mixed. The gas and solid phases occupy different fractions of the total volume of the storage material. The porosity, denoted by $\epsilon$, represents the fraction of the total volume occupied by the gas phase, while the remaining fraction, $1-\epsilon$, is occupied by the solid hydride. Since the densities $\rho_g$ and $\rho_s$ are defined per unit volume of their respective phases, the accumulation terms must be scaled by the corresponding volume fractions when written with respect to the total volume of the porous medium. Consequently, the rate of change of gas mass is weighted by $\epsilon$, whereas the rate of change of solid mass is weighted by $1-\epsilon$. This ensures that the mass transfer term $\dot{m}$ represents an equal exchange of mass between the two phases and that mass is conserved over the total volume. This gives us:
 \begin{subequations}\label{eq:model_1_gov}
     \begin{align}
         \epsilon\frac{d\rho_g}{dt} &= -\dot{m}(\rho_g, \rho_s) \\
         (1-\epsilon)\frac{d\rho_s}{dt} &= \dot{m}(\rho_g, \rho_s)
     \end{align}
 \end{subequations}
-With m given by Equations~\ref{eq:phy_dotm_abs} and~\ref{eq:phy_dotm_des}, for absorption and desorption respectively. The gas and solid phases occupy different fractions of the total volume of the storage material. The porosity, denoted by $\epsilon$, represents the fraction of the total volume occupied by the gas phase, while the remaining fraction, $1-\epsilon$, is occupied by the solid hydride. Since the densities $\rho_g$ and $\rho_s$ are defined per unit volume of their respective phases, the accumulation terms must be scaled by the corresponding volume fractions when written with respect to the total volume of the porous medium. Consequently, the rate of change of gas mass is weighted by $\epsilon$, whereas the rate of change of solid mass is weighted by $1-\epsilon$. This ensures that the mass transfer term $\dot{m}$ represents an equal exchange of mass between the two phases and that mass is conserved over the total volume. We also apply the ideal gas law, Equation~\ref{eq:phy_ideal_gas}, to write the governing equations in terms of $\rho_g$. Initial conditions are given by:
+With $\dot{m}$ given by Equations~\ref{eq:phy_dotm_abs} and~\ref{eq:phy_dotm_des}, for absorption and desorption respectively. The mass transfer is a rate of change from gas to solid, this is where our sign convention comes from. In desorption it will therefor be negative. We also apply the ideal gas law, Equation~\ref{eq:phy_ideal_gas}, to write the governing equations in terms of $\rho_g$. Initial conditions are given by:
 \begin{subequations}
 \begin{align}
     \rho_g(0) &= \rho_{g,0}, \\
@@ -136,6 +174,46 @@ With m given by Equations~\ref{eq:phy_dotm_abs} and~\ref{eq:phy_dotm_des}, for a
 \end{subequations}
 where $\rho_{s,0}$ is the initial density of the metal hydride in Equations~\ref{eq:phy_rhos_ini_abs} and~\ref{eq:phy_rhos_ini_des}, and $\rho_{g,0}$ is the equilibrium density corresponding to the equilibium pressure for absorption or desorption in Equations~\ref{eq:phy_rhog_ini_abs} and~\ref{eq:phy_rhog_ini_des}.
 
+\subsubsection*{Constant gas density}
+The above will model the mass transfer given the battery starts with a pre-determined amount of hydrogen gas in the battery. If we want to model given a constant density of hydrogen gas (so all absorbed hydrogen gas is replaced by hydrogen gas from the outside), we need to only model $\rho_s$, giving:
+
+\begin{equation}
+    (1-\epsilon)\frac{d\rho_s}{dt} = \dot{m}(\rho_{g,in}, \rho_s)
+\end{equation}
+Where $\rho_{g,in}$ is the density of the hydrogen gas at the inlet of the battery, and given an initial condition $\rho_s(0) = \rho_{s,0}$. The nice thing about this model is that both absorption and desorption are now analytically solvable, giving us a verification for our numerical methods. 
+
+The analytical solution for absorption can be found by solving the differential equation:
+\begin{equation}
+    (1-\epsilon)\frac{d\rho_s}{dt} = A_a \log \left( \frac{p_{in}}{p_{eq,a}} \right)(\rho_{sat} - \rho_s(t))
+\end{equation}
+which can be written as:
+\begin{equation}
+    \frac{d\rho_s}{dt} = B_a(\rho_{sat} - \rho_s(t))
+\end{equation}
+\begin{equation}
+    B_a = \frac{A_a}{1-\epsilon} \log \left( \frac{p_{in}}{p_{eq,a}} \right)
+    \end{equation}
+This is a first order linear ordinary differential equation, and solves into:
+\begin{equation}
+\rho_s(t) = \rho_{sat} - (\rho_{sat} - \rho_{s,0}) e^{-B_a t}
+\end{equation}
+The analytical solution for desorption can be found by solving the differential equation:
+\begin{equation}
+    (1-\epsilon)\frac{d\rho_s}{dt} = A_d \left( 1 - \frac{p_{in}}{p_{eq,d}} \right)( \rho_s(t) - \rho_o)
+\end{equation}
+which can be written as:
+\begin{equation}
+    \frac{d\rho_s}{dt} = B_d(\rho_s(t) - \rho_o)
+\end{equation}
+with
+\begin{equation}
+    B_d = \frac{A_d}{1-\epsilon} \left( 1 - \frac{p_{in}}{p_{eq,d}} \right)
+\end{equation}
+Solving into:
+\begin{equation}
+\rho_s(t) = \rho_o + (\rho_{s,0} - \rho_o) e^{B_d t}
+\end{equation}
+
 \subsubsection*{Model 2: 1D battery, constant flow and pressure}
 For our first spacially coupled models, we aim to compute the density of hydrogen gas $\rho_g$ in the battery, and the saturation of the metal hydride $\rho_s$. We do not yet aim to compute velocity of the gas and it is assumed that the flow is constant through the battery. The pressure is assumed to vary a little bit, leaving us to be able to neglect it in the momentum equations, but not in the mass transfer functions (since there a small variation is the difference between no absorption and absorption). The model is 1D and we will be looking at the domain $\Omega = (0,L)$, where $L$ is the length of the battery. The left boundary will be the inflow of hydrogen gas, and the right boundary will be the outflow of hydrogen gas. The model is shown in Figure~\ref{fig:model_2_domain}.
 
@@ -143,24 +221,25 @@ For our first spacially coupled models, we aim to compute the density of hydroge
     \centering
     \includegraphics[width=0.5\textwidth]{figures/model_2_domain.png}
     \caption{The domain of the 1D model. The domain is $\Omega$. 
-    The boundary $\partial\Omega_1$ is for the inlet of the battery.}\label{fig:model_2_domain}
+    The boundary $\partial\Omega_1$ is for the inlet of the battery. Unless stated otherwise, we will be choosing a domain of unit length $1m$.}\label{fig:model_2_domain}
 \end{figure}
 
 The above assumptions simplify our models a lot, and allow us to focus on the diffusion and convection of the hydrogen gas:
 \begin{subequations}\label{eq:phy_model_2}
     \begin{align}
-        \partial_t \rho_g &= D \partial_x^2 \rho_g - v \partial_x\rho_g - \dot{m}(\rho_g, \rho_s) \\
-        \partial_t \rho_s &= \dot{m}(\rho_g, \rho_s)
+        \epsilon\partial_t \rho_g &= D \partial_x^2 \rho_g - v \partial_x\rho_g - \dot{m}(\rho_g, \rho_s) \\
+        (1-\epsilon)\partial_t \rho_s &= \dot{m}(\rho_g, \rho_s)
     \end{align}
 \end{subequations}
-where we assume constant flow $v$ through the battery, and $D$ is the diffusion coefficient of the hydrogen gas. The initial conditions are given by:
+where we assume constant flow $v$ through the battery, and $D$ is the diffusion coefficient of the hydrogen gas. $\epsilon$ is again the porosity of the metal hydride. The initial conditions are given by:
 \begin{subequations}\label{eq:phy_model_2_ic}
     \begin{align}
-        \rho_g(x,0) &= \rho_{g,0}, \\
-        \rho_s(x,0) &= \rho_{s,0}.
+    \rho_g(x, 0)  &= \rho_{g,eq},\\
+    \rho_s(x,0) &= \rho_{s,0},\\
     \end{align}
 \end{subequations}
-which can be found in the same methods as in Model 1. The boundary conditions are given by:
+Where $\rho_{g,eq}$ is the equilibrium for either absorption or desorption (depending on the model),
+$\rho_{s,0}$ is $\rho_{e}$ or $\rho_f$ for absorption and desorption, respectively. The boundary conditions are given by:
 \begin{subequations}\label{eq:phy_model_2_bc}
     \begin{align}
         \rho_g(\partial\Omega_1,t) &= \rho_{g,in}, \\
@@ -176,32 +255,40 @@ This part is meant to combine absorption, diffusion, and convection shown in the
     \centering
     \includegraphics[width=0.5\textwidth]{figures/model_3_domain.png}
     \caption{The domain of the 2D model. The domain is $\Omega$. 
-    The boundary $\partial\Omega_1$ is for the inlet of the battery.}\label{fig:model_3_domain}
-    The boundary $\partial\Omega_2$ is for the insulating boundary. 
+    The boundary $\partial\Omega_1$ is for the inlet of the battery. The boundary $\partial\Omega_2$ is for the insulating boundary. $h_1$ is the height of the inlet, and the battery has dimensions $h_2xw$. We will be using a quadrilateral mesh.}\label{fig:model_3_domain}    
 \end{figure}
 
 We use the same physics and assumptions as in Model 2, but rewrite the governing equations in 2D. Equation~\ref{eq:phy_model_2} becomes:
 \begin{subequations}\label{eq:phy_model_3}
     \begin{align}
-        \partial_t \rho_g &= D \Delta \rho_g - \mathbf{v} \cdot (\nabla \rho_g) - \dot{m}(\rho_g, \rho_s) \\
-        \partial_t \rho_s &= \dot{m}(\rho_g, \rho_s)
+        \epsilon\partial_t \rho_g &= D \Delta \rho_g - \mathbf{v} \cdot (\nabla \rho_g) - \dot{m}(\rho_g, \rho_s) \\
+        (1-\epsilon)\partial_t \rho_s &= \dot{m}(\rho_g, \rho_s)
     \end{align}
 \end{subequations}
 where now $\mathbf{v}$ is a vector with the x-component and y-component of the velocity, and $\Delta$ is the Laplace operator. The initial conditions are given by:
 \begin{subequations}\label{eq:phy_model_3_ic}
     \begin{align}
-        \rho_g(\mathbf{x},0) &= \rho_{g,0}, \\
+        \rho_g(\mathbf{x},0) &= \rho_{g,eq}, \\
         \rho_s(\mathbf{x},0) &= \rho_{s,0}.
     \end{align}
 \end{subequations}
+again all found in the same way depending on absorption or desorption as the previous model. The boundary conditions are given by:
+
+\begin{subequations}\label{eq:phy_model_3_bc}
+    \begin{align}
+        \rho_g(\partial\Omega_1,t) &= \rho_{g,in}, \\
+        \partial_x \rho_g(\partial\Omega_2,t) &= 0.
+    \end{align}
+\end{subequations}
+
 
 \subsubsection*{Model 4: 1D Navier Stokes}
 Our next model is to look at more realistic behaviour for the flow of hydrogen gas. We start by a one dimensional implementation of the Navier Stokes equation, with a mass conservation equation where mass transfer is included. The model is 1D and we will be looking at the same domain as model 2. We model the flow of hydrogen $v$, the density of hydrogen gas $\rho_g$, and the saturation of the metal hydride $\rho_s$. The governing equations follow immedeately from Equations~\ref{eq:phy_navier_stokes} and~\ref{eq:phy_continuity_equation}, and are given by:
 \begin{subequations}\label{eq:phy_model_4}
     \begin{align}
         \rho_g \partial_t v &=-\rho_g v \partial_x v -RT\partial_x\rho_g+\mu\partial_x^2 v - \frac{\mu}{K} v \\
-        \partial_t\rho_g&=-\partial_x (\rho_g v) + \mu_\epsilon\partial_x^2\rho_g-\dot m \\
-        \partial_t \rho_s &= \dot m 
+        \epsilon\partial_t\rho_g&=-\partial_x (\rho_g v) + \mu_\epsilon\partial_x^2\rho_g-\dot m \\
+        (1-\epsilon)\partial_t \rho_s &= \dot m 
     \end{align}
 \end{subequations}
 Where we only added a diffusion term to the mass conservation equation (for stability, but we can keep $\epsilon$ small enough to not influence the results), and we applied the ideal gas law, since temperature is assumed to be constant. The initial conditions are given by:
@@ -231,8 +318,8 @@ The last model will be the extension of our previous model into 2 dimensions. Th
 \begin{subequations}\label{eq:phy_model_5}
     \begin{align}
         \rho_g \partial_t \mathbf{v}  &= - \rho_g (\mathbf{v} \cdot \nabla) \mathbf{v} - RT\nabla \rho_g  + \mu \Delta \mathbf{v} - \frac{\mu}{K} \mathbf{v}, \\
-        \partial_t \rho_g &= -\nabla \cdot (\rho_g \mathbf{v}) + \mu_\epsilon \Delta \rho_g - \dot{m}, \\
-        \partial_t \rho_s &= \dot{m}
+        \epsilon\partial_t \rho_g &= -\nabla \cdot (\rho_g \mathbf{v}) + \mu_\epsilon \Delta \rho_g - \dot{m}, \\
+        (1-\epsilon)\partial_t \rho_s &= \dot{m}
     \end{align}
 \end{subequations}
 which is the 2D version of Equations~\ref{eq:phy_model_4}, where the only variable difference is that $\mathbf{v}$ is now a vector. The initial conditions are given by:

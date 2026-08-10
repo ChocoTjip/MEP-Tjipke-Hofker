@@ -1,46 +1,39 @@
 \subsection{Model 2: 1D model with predetermined flow speed}\label{subseq:model_2}
 In this section we will be looking at a one dimensional model for the absorption of hydrogen gas into a battery. The model will have diffusion of hydrogen gas and convection with a predetermined flow speed. The battery will be on the domain $\Omega = (0,L)$, where $L$ is the length of the battery. The left boundary will be the inflow of hydrogen gas, and the right boundary will be the outflow of hydrogen gas. The model is shown in Figure~\ref{fig:model_2_domain}.
 
-% \begin{figure}[h]
-%     \centering
-%     \includegraphics[width=0.5\textwidth]{figures/model_2_domain.png}
-%     \caption{The domain of the 1D model. The domain is $\Omega$. 
-%     The boundary $\partial\Omega_1$ is for the inlet of the battery.}\label{fig:model_2_domain}
-%     The boundary $\partial\Omega_2$ is for the closed back of the battery.
-% \end{figure}
-
 This is summarized as the 1D version of Equation~\ref{eq:phy_model_2}:
 \begin{equation}
     \left\{
     \begin{aligned}
-        \partial_t\rho&=D\partial_x^2\rho-v\partial_x\rho-\dot{m}_a(\rho, \rho_s)\\
-        \partial_t\rho_s&=\dot{m}_a(\rho, \rho_s)
+        \partial_t\rho_g&=D\partial_x^2\rho_g-v\partial_x\rho_g-{m}_a(\rho_g, \rho_s)\\
+        \partial_t\rho_s&={m}_a(\rho_g, \rho_s)
     \end{aligned}
     \right.
 \end{equation}
-Here $\rho$ is the density of H2 in the air, seen as a ratio (so $\rho\in[0,1]$). $\rho_s$ is the amount of hydrogen in the solid Metal Organic Framework, $D$ is the diffusion coefficient, and $v$ is the pre-determined flow of the gas.For absorption we again use Equation~\ref{eq:model_1_mdot}. We calculate the problem under initial and boundary conditions:
+Here $\rho_g$ is the density of H2 in the air, seen as a ratio (so $\rho_g\in[0,1]$). $\rho_s$ is the amount of hydrogen in the solid Metal Organic Framework, $D$ is the diffusion coefficient, and $v$ is the pre-determined flow of the gas.For absorption we again use Equation~\ref{eq:model_1_mdot}. We calculate the problem under initial and boundary conditions:
 \begin{equation}
 \left\{ \begin{aligned}
-    \rho(x, 0)  &= 0, &\forall x\in \Omega,\\
-    \rho_s(x,0) &= 0, &\forall x\in \Omega,\\
-    \rho(0, t)  &= 1, &\forall t\geq 0, \\
-    \partial_x\rho(1, t)  &= 0, &\forall t\geq 0. \\
+    \rho_g(x, 0)  &= \rho_{g,eq}, &\forall x\in \Omega,\\
+    \rho_s(x,0) &= \rho_{s,0}, &\forall x\in \Omega,\\
+    \rho_g(0, t)  &= \rho_{g,in}, &\forall t\geq 0, \\
+    \partial_x\rho_g(L, t)  &= 0, &\forall t\geq 0. \\
 \end{aligned}\right.
 \end{equation}
-We write the densities and mass absorption as sums of finite element base functions:
+Where $\rho_{g,eq}$ is the equilibrium for either absorption or desorption (depending on the model), $\rho_{s,0}$ is $\rho_{e}$ and $\rho_f$ for absorption and desorption, respectively. $\rho_{g,in}$ is the density of hydrogen gas at the inlet, calculated from the pressure using the ideal gas law. 
+
+We write the densities and mass absorption as sums of $N$ finite element base functions:
 \begin{equation*}
 \begin{aligned}
-\rho&=\sum_i{\rho^{i}\psi^i},\\
-\rho_s&=\sum_i{\rho_s^{i}\psi^i},\\
-\dot m&=\sum_i{\dot m^{i}\psi^i}.
+\rho_g&=\sum_{i=1}^{N}{\rho_g^{i}\psi^i},\\
+\rho_s&=\sum_{i=1}^{N}{\rho_s^{i}\psi^i},
 \end{aligned}
 \end{equation*}
 We will define the control vector $\mathbf{u}$ as:
 \begin{equation}
     \mathbf{u} = \begin{pmatrix}
-        \rho^1 \\ 
+        \rho_g^1 \\ 
         \vdots \\
-        \rho^N \\
+        \rho_g^N \\
         \rho_s^1 \\
         \vdots \\
         \rho_s^N
@@ -51,22 +44,22 @@ We will define the control vector $\mathbf{u}$ as:
 In Galerkin Finite Element Methods, we start by multiplying each part with a test function that is equal to one of our finite element base function $\psi^j$. Then we integrate over the entire domain. If we do this with each $j\in[0,\ldots,N]$ we get a system of equations that we can use to solve fot our control vector. If we do these steps for the first terms with partial derivatives with respect to $t$, we get:
 \begin{equation*}
     \begin{aligned}
-        \int \psi^j (\partial_t\rho) dx &= \int \psi^j \partial_t\left(\sum_i \rho^i\psi^i\right) dx \\
-        &= \sum_i \left[ \int \psi^j \psi^i dx \,(\partial_t\rho^i) \right]\\
+        \int \psi^j (\partial_t\rho_g) dx &= \int \psi^j \partial_t\left(\sum_i \rho_g^i\psi^i\right) dx \\
+        &= \sum_i \left[ \int \psi^j \psi^i dx \,(\partial_t\rho_g^i) \right]\\
         &= \bigg(\begin{matrix}
             \int \psi^j \psi^i dx & \cdots & \int \psi^j \psi^N dx
         \end{matrix}\bigg)
         \begin{pmatrix}
-            \partial_t\rho^1 \\ 
+            \partial_t\rho_g^1 \\ 
             \vdots \\ 
-            \partial_t\rho^N
+            \partial_t\rho_g^N
         \end{pmatrix}\\
         \implies \begin{pmatrix}
-            \int \psi^1 \partial_t\rho \,dx \\
+            \int \psi^1 \partial_t\rho_g \,dx \\
             \vdots \\
-            \int \psi^N \partial_t\rho \,dx
+            \int \psi^N \partial_t\rho_g \,dx
         \end{pmatrix}
-        &= M_{\rho}(\partial_t\boldsymbol{\rho})
+        &= M_{\rho}(\partial_t\boldsymbol{\rho}_g)
     \end{aligned}
 \end{equation*}
 where:
@@ -87,7 +80,7 @@ and combining both gives:
     \begin{pmatrix}
         M^\rho & 0 \\ 0 & M^{\rho_s}
     \end{pmatrix}\begin{pmatrix}
-        \partial_t\boldsymbol{\rho} \\ \partial_t\boldsymbol{\rho}_s
+        \partial_t\boldsymbol{\rho}_g \\ \partial_t\boldsymbol{\rho}_s
     \end{pmatrix} = M(\partial_t\mathbf{u})
 \end{equation*}
 with $M:=\begin{pmatrix}
@@ -98,20 +91,20 @@ with $M:=\begin{pmatrix}
 To get the diffusion term of we multiply by test function $\psi^j$ and integrate over $\Omega$ to get:
 \begin{equation*}
 \begin{aligned}
-\int \psi^j(\partial_{xx}\rho)da &= \int \psi^j(\partial_{xx}\rho) dx \\
-&= \psi^j(\partial_x\rho)\bigg|_{x=0}^1 -\int (\partial_x\rho)(\partial_x\psi^j)dx
+\int \psi^j(\partial_{xx}\rho_g)da &= \int \psi^j(\partial_{xx}\rho_g) dx \\
+&= \psi^j(\partial_x\rho_g)\bigg|_{x=0}^1 -\int (\partial_x\rho_g)(\partial_x\psi^j)dx
 \end{aligned}
 \end{equation*}
 where now we had to apply integration by parts, since the lagrange polynomials dont have a second derivative necessarily. The boundary condition at $x=1$ vanishes, since $\partial_x\rho=0$ there. At $x=0$ we will be using a constraint handler to keep this point in check, and therefor we can discard this point as well. Now we can write the diffusion equation in its semi-discrete form:
 
 \begin{equation*}
     \begin{aligned}
-        D\int \psi^j(\Delta\rho)da &= -D \sum_i \int (\nabla \psi^i)\cdot(\nabla\psi^j)da \,\,\rho^i \\
+        D\int \psi^j(\Delta\rho_g)da &= -D \sum_i \int (\nabla \psi^i)\cdot(\nabla\psi^j)da \,\,\rho_g^i \\
         \implies 
         D\begin{pmatrix}
-            \int \psi^1(\Delta\rho)da \\
+            \int \psi^1(\Delta\rho_g)da \\
             \vdots \\
-            \int \psi^N(\Delta\rho)da
+            \int \psi^N(\Delta\rho_g)da
         \end{pmatrix}&= K\mathbf{u}\\
     \end{aligned}
 \end{equation*}
@@ -124,7 +117,7 @@ K_{ij}=D\int (\nabla \psi^i)\cdot(\nabla\psi^j)dx
 Looking at the convection term gives us:
 \begin{equation*}
     \begin{aligned}
-        \int v\psi^j\partial_x \rho \, dx &= \sum_i\left[v \int\psi^j(\partial_x\psi^i)dx \, \rho_i
+        \int v\psi^j\partial_x \rho_g \, dx &= \sum_i\left[v \int\psi^j(\partial_x\psi^i)dx \, \rho_g^i
         \right]\\
         & = v\bigg( \begin{matrix}
               \int\psi^j(\partial_x\psi^1)dx 
@@ -132,16 +125,16 @@ Looking at the convection term gives us:
             & \int\psi^j(\partial_x\psi^N)dx
         \end{matrix}\bigg)
         \begin{pmatrix}
-            \rho^1 \\ \vdots \\ \rho^N
+            \rho_g^1 \\ \vdots \\ \rho_g^N
         \end{pmatrix}
     \end{aligned}
 \end{equation*}
 here we also have the option to use integration by parts on the right hand side. This would lead to a non-vanishing boundary term. For this problem it is sufficient to not apply integration by parts, since $\partial_x \rho$ is defined in our lagrange basis functions. This leads to:
 \begin{equation*}
     \begin{pmatrix}
-        \int v\psi^1\partial_x \rho \, dx \\ \vdots \\
-        \int v\psi^N\partial_x \rho \, dx
-    \end{pmatrix} = C \boldsymbol{\rho}
+        \int v\psi^1\partial_x \rho_g \, dx \\ \vdots \\
+        \int v\psi^N\partial_x \rho_g \, dx
+    \end{pmatrix} = C \boldsymbol{\rho}_g
 \end{equation*}
 with again:
 \begin{equation*}
@@ -152,23 +145,23 @@ with again:
 Since we are doing a finite element method, we do need spatial dependencies in our method. 
 We follow the steps for creating the weak form of the absorption term, and call the non-linear absorption vector $\mathbf{b}$:
 \begin{equation*}
-b^{j} = \int \dot m_a ({x})\psi^j dx
+b^{j} = \int  m_a ({x})\psi^j dx
 \end{equation*}
 Now it is usefull to substitute the absorption term with its finite element approximation:
 \begin{equation*}
-{\dot m_a} \approx {\dot m}_h = \sum \dot m^{i} \psi^i,
+{ m_a} \approx { m}_h = \sum \dot m^{i} \psi^i,
 \end{equation*}
 where
 \begin{equation*}
-\dot m^{i} = k \rho^{i}(\rho_{sat}-\rho_s^{i})
+ m^{i} = k \rho^{i}(\rho_{sat}-\rho_s^{i})
 \end{equation*}
 which is under the assumtion that we are using Lagrange elements, which all are zero at each others node except their own. We see the components of $\mathbf{b}$ as:
 \begin{equation*}
 \begin{aligned}
-b^{ j} &= \int \dot m_h (\mathbf{x}^n)\psi^j d\Omega \\
-&\approx \sum \int \dot m^{i} \psi^i \psi^j d\Omega\\
-&= \sum \int \psi^i \psi^j d\Omega  \,\, \dot m^{i}\\
-\mathbf{b}&= M\mathbf{\dot m}_h
+b^{ j} &= \int  m_h (\mathbf{x}^n)\psi^j d\Omega \\
+&\approx \sum \int  m^{i} \psi^i \psi^j d\Omega\\
+&= \sum \int \psi^i \psi^j d\Omega  \,\,  m^{i}\\
+\mathbf{b}&= M\mathbf{ m}_h
 \end{aligned}
 \end{equation*}
 

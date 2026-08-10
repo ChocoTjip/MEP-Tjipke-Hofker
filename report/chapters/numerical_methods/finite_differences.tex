@@ -1,8 +1,13 @@
 \subsection{Finite Differences}\label{subsec:finite_differences}
 
-Finite differences uses a discretization of the domain. Say we want to discretize the domain $[a, b]$ into $N$ points, we can define the discretization as follows:
+In this section we will be looking into finite difference methods. Finite difference methods are a class of numerical methods for solving differential equations by approximating derivatives with finite differences. The basic idea is to replace the continuous derivatives in the differential equation with discrete approximations based on the values of the function at a set of grid points. We use finite differences only as a check to validate our low-Peclet number FEM results, so we will not be looking very deeply into this method. We will describe finite differences with a simple example, show how this leads to oscilations, and then show how to fix this using upwind methods. 
+
+A lot of the theory is implemented automatically in the MethodOfLines.jl package.
+
+\subsubsection{Central Finite Differences}
+Finite differences uses a discretization of the domain. Say we want to discretize the domain $[a, b]$ into $N$ intervals, we can define the discretization as follows:
 \begin{equation}
-    x_i = a + i\Delta x, \quad i = 0, 1, \ldots, N-1,
+    x_i = a + i\Delta x, \quad i = 0, 1, \ldots, N,
 \end{equation}
 where $\Delta x = (b-a)/N$ is the spatial step size. Now our control vector $\mathbf{u}$ becomes:
 \begin{equation}
@@ -10,7 +15,8 @@ where $\Delta x = (b-a)/N$ is the spatial step size. Now our control vector $\ma
         u(x_0, t) \\
         u(x_1, t) \\
         \vdots \\
-        u(x_{N-1}, t)
+        u(x_{N-1}, t) \\
+        u(x_N, t)
     \end{pmatrix}
 \end{equation}
 
@@ -31,7 +37,7 @@ Now we can approximate the second derivative using finite differences. The secon
 \begin{equation}
     \partial_{xx} u(x_i, t) \approx \frac{u(x_{i+1}, t) - 2u(x_i, t) + u(x_{i-1}, t)}{\Delta x^2}.
 \end{equation}
-for all $i = 1, 2, \ldots, N-2$. This leads to a semi-discrete system of ODEs:
+for all $i = 1, 2, \ldots, N-1$. This leads to a semi-discrete system of ODEs:
 \begin{equation}
     \partial_t \mathbf{u}(t) = D A \mathbf{u}(t),
 \end{equation}
@@ -45,16 +51,16 @@ where $A$ is the matrix representing the finite difference approximation of the 
         0 & 0 & 0 & 1 & -2
     \end{pmatrix}.
 \end{equation}
-for the boundary points corresponding to $i = 0, N-1$ we can use Dirichlet boundary conditions, where we set the values of $u(x_0, t)$ and $u(x_{N-1}, t)$ to be constant. This leads to a semi-discrete system of ODEs that can be solved using time integration methods as discussed in Section~\ref{subseq:time_integrations}.
+for the boundary points corresponding to $i = 0, N$ we can use Dirichlet boundary conditions, where we set the values of $u(x_0, t)$ and $u(x_{N}, t)$ to be constant. This leads to a semi-discrete system of ODEs that can be solved using time integration methods as discussed in Section~\ref{subseq:time_integrations}.
 
-\subsubsection*{Upwind Methods}
+\subsubsection{Upwind Methods}
 
-The above method often leads to numerical oscillations in the solutions. These are due to the use of central differences at the boundaries and discontinuities in the solution. If you take for example a simple advection equation:
+The above method often leads to numerical oscillations in the solutions if we are working with advective problems. These are due to the use of central differences at the boundaries and discontinuities in the solution. If you take for example a simple advection equation:
 
 \begin{equation*}
     \partial_t u + c \partial_x u = 0,
 \end{equation*}
-where $c$ is a constant, and $u(x,t)$ is the solution we are approximating. The solution is of the form [SOURCE]:
+where $c$ is a constant, and $u(x,t)$ is the solution we are approximating. The solution is of the form:
 
 \begin{equation*}
     u(x,t) = f(x - ct)
@@ -101,6 +107,13 @@ which will lead to a growth of only the part upwind of the continuity, as expect
     \partial_x u_n \approx \frac{3u_n - 4u_{n-1} + u_{n-2}}{2h},
 \end{equation*}
 this leads to a more accurate approximation of the derivative, and reduces numerical diffusion, but is more computationally expensive.
+
+The ideas behind the upwind method is shown in Figure~\ref{fig:num_upwind}. Here we see the appriximations for the derivative at a certain point given the direction of the flow. 
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{figures/num_upwind.png}
+    \caption{The left figure shows the derivative at point $x=3$ for the central differences method, and the right figure shows the results of the upwind method. The central differences will give a wrong picture if the velocity is positive (moving to the right), because of how the derivative is calculated. For the upwind method we look at different derivatives depending on the direction of the flow. If the flow is positive, we use the red derivative, and if the flow is negative, we use the green derivative.}\label{fig:num_upwind}
+\end{figure}
 
 % vind volgende stukken nog leuk maar niet af en dus niet zeker of ik ze wil houden
 % Fourier analysis/stability and fourier analysis
