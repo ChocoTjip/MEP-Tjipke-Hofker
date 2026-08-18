@@ -4,11 +4,9 @@ In the previous section, the governing partial differential equations were spati
 
 The simplest time integration methods are the forward and backward Euler methods. The forward Euler method is an explicit method, while the backward Euler method is an implicit method. Implicit is more accurate but computationally more expensive for non-linear problems, as it requires solving a system of equations at each time step. Explicit is easier to compute but less accurate, and requires smaller time steps for stability. Initially I wrote a combined method that uses implicit for linear terms and explicit for non-linear terms. This is an IMEX method, which we will describe in Section~\ref{subsubsec:num_IMEX}.
 
-For our methods where the time-dependency is written in the form $Md\mathbf{u}/dt = \mathbf{f}(\mathbf{u},t)$, we can use the builtin Julia \texttt{Rodas5P} function. This method is an implicit fifth-order Rosenbrock--Wanner method, which we will briefly describe in Section~\ref{subsubsec:num_ROW}.
+For our methods where the time-dependency is written in the form $Md\mathbf{u}/dt = \mathbf{f}(\mathbf{u},t)$, we can use the builtin Julia \texttt{Rodas5P} function. This method is an implicit fifth-order Rosenbrock--Wanner method, which we will briefly describe in Section~\ref{subsubsec:num_ROW}. This method is also used in the model validations using the Finite Difference Method.
 
 For our models with a time dependent mass matrix, say if it depends on the density at that $x$, we cannot easily write it in the system that is compatible with \texttt{Rodas5P}. In this case, we can use the \texttt{IDA} function from the \texttt{Sundials.jl} package. This method is a variable-step, variable-order backward differentiation formula method, which is designed for fully implicit differential-algebraic systems.
-
-Lastly, the time-integration method used together with \texttt{MethodOfLines.jl} is discussed. This package is used to obtain finite-difference reference solutions for Models~4 and~5 at sufficiently low P\'eclet numbers. After the spatial discretization has been generated, the resulting system is integrated using the \texttt{Tsit5} method. The Tsitouras method is an explicit fifth-order Runge--Kutta method with an embedded fourth-order error estimator. The embedded estimator allows the local temporal error to be estimated and the time-step size to be adjusted automatically. Since it is an explicit method intended primarily for non-stiff systems, it is used here for the validation cases in which the semi-discrete equations can be integrated efficiently without requiring a stiff solver.
 
 \subsubsection{Implicit--Explicit (IMEX) Method}\label{subsubsec:num_IMEX}
 
@@ -82,13 +80,34 @@ and we can rewrite Equation~\ref{eq:num_step_update_implicit_euler} as:
     \mathbf{u}^{n+1}_1 = \mathbf{u}^{n+1}_0 - J_R(\mathbf{u}^{n+1}_0)^{-1} \mathbf{R}(\mathbf{u}^{n+1}_0)
 \end{equation}
 now we repeat until the residual is sufficiently small, or it is sufficiently small wrt the solution. One more important note is that the time step $\Delta t$ in Equation~\ref{eq:num_jacobian_residual_implicit_euler} is often written in literature (especially literature for Julia) as $\gamma$. And the jacobian of the residual is $W$. Giving:
-\begin{equation}
+\begin{equation}\label{eq:num_jacobian_residual_implicit_euler_gamma}
     W = M-\gamma J_f
 \end{equation}
 
 \subsubsection{Rosenbrock--Wanner (ROW) method}\label{subsubsec:num_ROW}
 
-In the previous section we looked at implicit time integration for non-linear terms using backward Euler. 
+In the previous section we looked at implicit time integration for non-linear terms using backward Euler. Our julia solver most often uses the Rosenbrock--Wanner method, which is of the family of linearly implicit methods. The method looks at the difference between two timesteps:
+
+\begin{equation}
+    k = u^{n+1} - u^n
+\end{equation}
+and substitutes this into the implicit timestep:
+\begin{equation}
+    u^{n+1} = u^n + \Delta t f(u^{n+1},t^{n+1})
+\end{equation}
+giving us:
+\begin{equation}
+    k = \Delta t f(u^n + k, t^{n+1})
+\end{equation}
+This is still a non-linear system of equations, so we linearize it around $k=0$:
+\begin{equation}
+    k = \Delta t f(u^n, t^{n+1}) + \Delta t J_f(u^n, t^{n+1}) k
+\end{equation}
+which would give us a linear system of equations to solve for $k$:
+\begin{equation}
+    (I - \Delta t J_f(u^n, t^{n+1})) k = \Delta t f(u^n, t^{n+1})
+\end{equation}
+The Rosenbrock--Wanner method is a one-step method, which means that it only uses information from the current time step to compute the next time step. The core idea is to linearize $f$ once per time step instead of solving a non-linear system of equations.
 
 \subsubsection{Implicit Differential-Algebraic (IDA) Methods}\label{subsubsec:num_IDA}
 
@@ -104,7 +123,7 @@ The main idea is to write the residual as a function of not only $u$, but also $
 To create an algorithm for solving for $\mathbf{u}^{n+1}$, we need a current state vector $\mathbf{u}^n$, a current derivative $\dot{\mathbf{u}}^n$, and an approximation for $\dot{\mathbf{u}}^{n+1}$. IDA approximates the derivative as a linear combination of the current and previous values of $\mathbf{u}$, which becomes (for order $q$):
 
 \begin{equation}
-    \sum_{i=0}^q\alpha_{i}^n\mathbf{u}^{n-i}=h_n\dot{\mathbf{u}}^n,
+    \dot{\mathbf{u}}^n = \frac{1}{h_n}\sum_{i=0}^q\alpha_{i}^n\mathbf{u}^{n-i},
 \end{equation}
 where $h_n$ is the step size, and the coefficients $\alpha_{i}^n$ are uniquely determined by the order and previous step sizes. For now we take a simple first order which corresponds to backwards Euler:
 \begin{equation}
@@ -141,4 +160,7 @@ which gives the Jacobian of the residual function as:
 \begin{equation}
     J_R(\mathbf{u}) = \frac{\partial R}{\partial \mathbf{u}} + \gamma_n \frac{\partial R}{\partial \dot{\mathbf{u}}} = \begin{pmatrix} -2u_1 & \dot{u}_1 \\ 0 & -2u_2 \end{pmatrix} + \gamma_n \begin{pmatrix} u_2 & 0 \\ 0 & 1 \end{pmatrix} = \begin{pmatrix} \gamma_n u_2 - 2u_1 & \dot{u}_1 \\ 0 & \gamma_n - 2u_2 \end{pmatrix}
 \end{equation}
-where we should keep in mind this is the Jacobian for the IDA method of order 1. Higher orders change the coefficients $\alpha_i^n$ and $h_n$, but the principle remains the same. IDA can compute the Jacobians automatically using automatic differentiation as well. 
+
+We should keep in mind this is the Jacobian for the IDA method of order 1. Higher orders change the coefficients $\alpha_i^n$ and $h_n$, but the principle remains the same. IDA can compute the Jacobians automatically using automatic differentiation as well. 
+
+I like to also note the resemblence to Equation~\ref{eq:num_jacobian_residual_implicit_euler_gamma}. Indeed, the linear implicit Newton method can be seen as a special case of the IDA method, where the mass matrix is constant and the residual function is linear in $\dot{\mathbf{u}}$. In that case, the derivative with respect to $\dot{\mathbf{u}}$ becomes $M$, and the Jacobian of the residual function simplifies to $J_R = M - \gamma_n J_f$, which is exactly what we derived in that section.
