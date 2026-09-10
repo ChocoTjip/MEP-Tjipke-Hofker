@@ -34,7 +34,7 @@ $H^2(\Omega)$ to $H^1(\Omega)$. This produces the familiar stiffness matrices an
 
 \subsubsection{SUPG Stabilization}
 
-For convection-dominated problems, the standard Galerkin finite element method may develop non-physical oscillations. As stated before, this is related to the Peclet number in Equation~\ref{eq:num_peclet}.
+For convection-dominated problems, the standard Galerkin finite element method may develop non-physical oscillations. As stated before, this is related to the P\'eclet number in Equation~\ref{eq:num_peclet}.
 
 To illustrate this behaviour, we consider the one-dimensional advection--diffusion equation
 
@@ -93,9 +93,9 @@ For large P\'eclet numbers, this expression approaches
 
 The SUPG method can therefore be interpreted as adding diffusion primarily in the streamline direction, which suppresses non-physical oscillations while preserving the sharpness of the transported front better than standard upwind methods.
 
-The effect of SUPG stabilization is illustrated in Figure~\ref{fig:num_supg}. In all four cases the parameters are fixed at \(t=0.5\), \(v=1.0\), and \(h=0.02\), while the diffusion coefficient \(D\) is varied, resulting in different element Peclet numbers. The standard Galerkin solutions are shown for \(\mathrm{Pe}=10\) and \(\mathrm{Pe}=100\). For \(\mathrm{Pe}=10\), the Galerkin solution remains acceptable, while for \(\mathrm{Pe}=100\) clear non-physical oscillations are visible. The SUPG solutions are shown for \(\mathrm{Pe}=100\) and \(\mathrm{Pe}=1000\). In both cases the oscillations are effectively suppressed, demonstrating the stabilizing effect of the method in convection-dominated regimes.
+The effect of SUPG stabilization is illustrated in Figure~\ref{fig:num_supg}. In all four cases the parameters are fixed at \(t=0.5\), \(v=1.0\), and \(h=0.02\), while the diffusion coefficient \(D\) is varied, resulting in different element P\'eclet numbers. The standard Galerkin solutions are shown for \(\mathrm{Pe}=10\) and \(\mathrm{Pe}=100\). For \(\mathrm{Pe}=10\), the Galerkin solution remains acceptable, while for \(\mathrm{Pe}=100\) clear non-physical oscillations are visible. The SUPG solutions are shown for \(\mathrm{Pe}=100\) and \(\mathrm{Pe}=1000\). In both cases the oscillations are effectively suppressed, demonstrating the stabilizing effect of the method in convection-dominated regimes.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=.7\textwidth]{figures/num_SUPG.png}
     \caption{Comparison between standard Galerkin FEM and SUPG FEM for the one-dimensional advection--diffusion equation at $t=0.5$, with $v=1.0$ and $h=0.02$. The standard Galerkin method gives an acceptable solution for $\mathrm{Pe}=10$, but develops strong oscillations for $\mathrm{Pe}=100$. The SUPG method remains stable and non-oscillatory for both $\mathrm{Pe}=100$ and $\mathrm{Pe}=1000$.}
@@ -192,7 +192,7 @@ Spatial derivatives in the physical coordinate are obtained using
 \end{equation}
 
 An example of Lagrange polynomial basis functions of degree $p=3$ is shown in Figure~\ref{fig:num_lagrange_polynomials}. The interpolation nodes are chosen to be on $[-1, -0.1, 0.5, 1]$.
-\begin{figure}[h]\centering
+\begin{figure}[ht]\centering
     \includegraphics[width=.7\textwidth]{figures/num_lagrange_polynomials.png}
     \caption{Lagrange polynomial basis functions of degree $p=3$, as implementations of Equation~\ref{eq:num_lagrange}. The basis functions are defined on the reference element $\hat{\Omega}=[-1,1]$ and satisfy the nodal interpolation property $\phi^i(\xi_j)=\delta_{ij}$. The interpolation nodes are chosen to be on $[-1, -0.1, 0.5, 1]$.}\label{fig:num_lagrange_polynomials}
 \end{figure}

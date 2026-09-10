@@ -1,2 +1,81 @@
+\section{discussion}\label{sec:discussion}
+\subsection{Main findings}
+
+THe main result of the work is that we have shown that we can use Julia to implement Finite Element Methods and numerical time integration techniques, under the restrictions discussed in Section~\ref{sec:physics}, to accurately model the physics of Metal Hydride hydrogen batteries. The only results where we have some doubts is model 5, which we will discuss in the subsection numerical limitations.
+
+For the investigated parameter ranges, the characteristic time scale of hydrogen transport through the gas phase is considerably smaller than the characteristic time scale of hydrogen absorption into the solid material. As a consequence, spatial variations in gas density disappear relatively quickly compared with the time required to charge the metal hydride.
+
+In Model~1, under the perfectly mixed assumption, the numerical solution closely follows the available analytical solution. This gives us confidence that the implementation correctly models the expected absorption and desorption behaviour. Although Model~1 neglects all spatial variation, the later spatially dependent models show that this assumption is less restrictive than initially expected.
+
+Models~2 and~3 introduce spatial hydrogen transport while prescribing the gas velocity. For realistic parameter values, the gas distributes through the reactor on a substantially shorter time scale than the solid absorbs hydrogen. The local solid saturation curves therefore remain relatively close to one another, and the spatially averaged filling behaviour approaches that of the perfectly mixed Model~1. This indicates that, under approximately isothermal conditions, resolving the spatial gas transport has only a limited influence on the total charging time when gas transport is much faster than mass transfer.
+
+The same behaviour is observed more clearly in Model~4, in which the gas velocity is no longer prescribed but obtained from the momentum equation. For the realistic parameter set, the gas phase fills the reactor in approximately $10\,\mathrm{ms}$, whereas the solid requires approximately $100\,\mathrm{s}$ to approach saturation. The difference of several orders of magnitude between these time scales explains why the resulting solid filling curve again resembles that of a perfectly mixed reactor. Despite the considerably more detailed treatment of compressible flow and pressure-dependent mass transfer, the total filling behaviour therefore remains close to that predicted by Model~1.
+
+This similarity between the models is an important result rather than an indication that the spatial models are unnecessary. The more detailed models demonstrate the conditions under which the simpler Model~1 approximation is justified. For an approximately isothermal reactor in which gas transport is much faster than absorption or desorption, a zero-dimensional model may therefore provide a computationally inexpensive approximation of the overall filling behaviour.
+
+The importance of spatial modelling is expected to increase once temperature is included. Both the equilibrium pressure and the mass-transfer kinetics depend strongly on temperature, while absorption and desorption respectively generate and consume heat. Spatial temperature gradients may therefore produce corresponding spatial variations in the mass-transfer rate. In a cooled reactor, regions close to the wall are expected to remain colder and may consequently continue absorbing hydrogen more rapidly than hotter regions in the interior. Gas flow could then preferentially transport hydrogen towards regions where the local thermodynamic conditions favour absorption. Under these conditions, the assumption of a perfectly mixed reactor would become considerably less representative, and the spatial flow models developed here provide a basis for studying this additional coupling.
+
+In Model~2, 3, 4, and~5, we have also implemented our own time integration technique, the IMEX method, to validate our findings using another method of time integration. The results for our IMEX method and Julias own implemented time integration showed very close proximity. We also implemented a finite difference spacial discretization scheme to validate model 4, and found that this method introduced a little diffusion due to internal stabilizations. Both IMEX and Finite Difference methods did not lead to stable discretizations for high P\'eclet number regimes.
+
+\subsection{Numerical limitations and stabilization}
+
+Although the physically relevant filling behaviour is reproduced consistently across the different models, the spatially resolved formulations remain sensitive to convection-dominated conditions. This is particularly visible in Models~4 and~5, where realistic parameter values correspond to relatively high P\'eclet numbers.
+
+For Model~4, oscillations were initially observed near the inlet when the prescribed pressure was changed almost discontinuously at the start of the simulation. These oscillations could be removed by replacing the sudden step with a smooth exponential increase of the inlet total pressure. The smoothing introduces only a very short artificial transition period, while the reactor still reaches the prescribed gas pressure on a time scale that is negligible compared with the absorption time. In practice, the gas phase is filled within approximately $10\,\mathrm{ms}$, whereas the solid requires approximately $100\,\mathrm{s}$ to approach saturation. The modification therefore improves the numerical behaviour without materially affecting the physically relevant charging dynamics.
+
+The remaining oscillations in Model~5 are more persistent. Even when the inlet pressure is introduced smoothly in the same manner as in Model~4, a checkerboard-like pattern remains visible in the two-dimensional solution. This suggests that the oscillations are not caused only by the discontinuity at the inlet, but are also related to the spatial discretization of the convection-dominated two-dimensional problem.
+
+A likely cause is the use of a standard Galerkin finite-element formulation without additional stabilization. At high P\'eclet numbers, the convective transport terms dominate the diffusive terms, and the standard Galerkin method is known to become susceptible to non-physical oscillations. This behaviour is already visible in the simpler spatial models when the diffusion coefficient is reduced. In one dimension, smoothing the inlet condition was sufficient to suppress the most visible oscillations in Model~4, but in two dimensions the larger number of spatial degrees of freedom and the multidirectional velocity field provide additional possibilities for oscillatory modes to develop.
+
+For Models~2 and~3, SUPG stabilization can be introduced relatively directly because the velocity field is prescribed. In Models~4 and~5, however, the velocity is itself part of the nonlinear solution and changes in both space and time. The stabilization parameter and streamline direction must therefore depend on the current velocity field, which makes the formulation and its Jacobian more involved. In Model~5 this difficulty is further increased by the vector-valued velocity and the two-dimensional element geometry.
+
+The checkerboard structure observed in Model~5 may also indicate that the choice of finite-element spaces for the coupled velocity and density fields deserves further investigation. The present results are sufficient to demonstrate the overall behaviour of the model, but they should not yet be interpreted as a fully stabilized solution of the high-P\'eclet-number two-dimensional problem. Further work should therefore investigate whether SUPG or another convection-stabilization technique removes the remaining oscillations and whether the present combination of interpolation spaces is suitable for the coupled compressible flow formulation.
+
+\subsection{Further research}
+
+The present work provides a suitable basis for two possible directions of further research after the green-light stage.
+
+The first option is to continue improving the numerical treatment of the spatially resolved flow models. In particular, Model~5 still shows non-physical checkerboard-type oscillations under convection-dominated conditions. A logical next step is therefore to implement a stabilization method such as SUPG for Models~4 and~5. This would allow the current isothermal flow models to be studied more reliably at realistic, high-P\'eclet-number conditions and would help determine whether the remaining oscillations are primarily caused by the unstabilized Galerkin discretization or by another aspect of the coupled formulation.
+
+The second option is to extend the physical model by including temperature. The present results show that, under the isothermal assumption, gas transport through the reactor is much faster than hydrogen absorption into the solid. This is the main reason why the spatially resolved models produce filling behaviour that remains close to the zero-dimensional Model~1. Temperature may change this conclusion substantially, since both the equilibrium pressure and the absorption and desorption kinetics depend on temperature, while the mass-transfer process itself generates or consumes heat.
+
+For this reason, it may be beneficial to introduce temperature first in one of the simpler models, such as the zero-dimensional or one-dimensional formulation. This would allow the thermal coupling to be investigated without immediately combining it with the numerical difficulties already present in the two-dimensional convection-dominated model. Once the influence of temperature is understood and the thermal formulation has been validated, it can subsequently be incorporated into the more detailed spatial flow models.
+
+Consequently, the recommended continuation after the green-light stage is either to improve the numerical robustness of Models~4 and~5 through stabilization, or to prioritize the addition of temperature in a simpler model. The first direction mainly improves the reliability of the current numerical framework, whereas the second introduces the physical effect that is most likely to determine whether spatially resolved flow modelling becomes necessary for predicting realistic metal-hydride charging and discharging behaviour.
+
+\newpage
 \section{Conclusion}\label{sec:conclusion}
-Hier wil ik het ook nog even over hebben!
+
+This work developed a sequence of models for hydrogen transport and mass transfer in a metal-hydride storage system. The models were gradually extended from a zero-dimensional, perfectly mixed reactor to one- and two-dimensional models with spatial transport and pressure-driven gas flow. This made it possible to compare the added physical detail of each model with the extra numerical complexity that it introduced.
+
+Model~1 showed that the basic mass-transfer model behaves as expected. For the cases where an analytical solution was available, the numerical solution followed it closely. This gave confidence in the implementation of the absorption and desorption kinetics.
+
+Models~2 and~3 added spatial transport while prescribing the gas velocity. These models showed that, for realistic parameter values, the gas spreads through the reactor much faster than hydrogen is absorbed by the solid. The gas phase therefore becomes almost uniform before the solid saturation changes significantly.
+
+The same behaviour was seen more clearly in Model~4, where the gas velocity was calculated from the momentum equation instead of being prescribed. With realistic parameters, the gas filled the reactor in roughly $10\,\mathrm{ms}$, while the solid required roughly $100\,\mathrm{s}$ to approach saturation. These time scales differ by several orders of magnitude.
+
+Because of this, the solid filling curves from the spatial models look very similar to the result of the perfectly mixed Model~1. This is an important result. It suggests that, under the isothermal conditions considered here, the zero-dimensional model can already give a useful estimate of the overall filling behaviour.
+
+The more detailed models are still valuable, because they show why the simple model works. They also show when it may stop working. The most important missing effect is temperature. Absorption releases heat, while desorption requires heat. Both the equilibrium pressure and the mass-transfer rate depend strongly on temperature.
+
+Once temperature is included, larger spatial differences are expected. Regions close to a cooled wall will likely remain colder and may absorb hydrogen faster than the hotter interior. Gas flow may then transport hydrogen towards these regions. In that case, the spatial distribution of velocity, density, and temperature may become much more important than it is in the present isothermal models.
+
+The spatial models also showed the numerical difficulties that appear when convection becomes dominant.
+
+In Model~4, oscillations were initially observed near the inlet. These were strongly reduced by replacing the sudden pressure step with a smooth exponential increase. The pressure still reaches its prescribed value very quickly compared with the absorption time, so this smoothing has little influence on the physical filling process.
+
+Model~5 remains more difficult. A checkerboard-like pattern can still be seen in the two-dimensional solution, even when the inlet pressure is introduced smoothly. This suggests that the problem is not caused only by the initial pressure change. It is likely also related to the spatial discretization of the convection-dominated problem.
+
+At high P\'eclet numbers, a standard Galerkin finite-element method can produce non-physical oscillations. This was already seen in the simpler models. SUPG stabilization could be applied relatively easily in Models~2 and~3 because the velocity is prescribed. In Models~4 and~5, the velocity is itself part of the nonlinear solution. This makes the stabilization more involved, especially in two dimensions.
+
+The remaining oscillations in Model~5 may also be related to the chosen finite-element spaces for the coupled velocity and density fields. This has not yet been investigated in enough detail to identify the exact cause. The two-dimensional model should therefore not yet be considered fully stabilized for realistic high-P\'eclet-number conditions.
+
+There are two clear directions for continuing this work after the green-light stage.
+
+The first is to improve the numerical stabilization of Models~4 and~5. Implementing SUPG, or another suitable stabilization method, would make it possible to study the current isothermal flow models more reliably at realistic P\'eclet numbers. It would also help determine whether the oscillations in Model~5 mainly come from the convection discretization or from another part of the coupled formulation.
+
+The second direction is to add temperature to the model. Based on the results of this report, this is likely to have a larger effect on the physical behaviour than adding even more detail to the isothermal flow model. A sensible first step would be to add temperature to the zero-dimensional or one-dimensional model. This would keep the numerical problem manageable while allowing the thermal coupling to be studied and validated.
+
+After that, the temperature model could be combined with the more detailed pressure-driven flow formulations. This would make it possible to investigate whether thermal gradients are large enough for spatial flow effects to become important.
+
+Overall, the present models show that a simple perfectly mixed description can already capture the main filling behaviour under isothermal conditions. The more detailed models explain why this is the case and provide a basis for future extensions. The next step is therefore either to improve the stabilization of the spatial flow models or to introduce temperature, which is expected to be the most important missing physical effect.

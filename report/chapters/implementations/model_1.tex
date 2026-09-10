@@ -34,7 +34,7 @@ For our IMEX method as described in Section~\ref{subseq:time_integrations}, we d
 \begin{equation*}
 \mathbf{u}^{n+1}=\mathbf{u}^n +\begin{pmatrix} -{m}_a(\mathbf{u})\\ {m}_a(\mathbf{u})\end{pmatrix} \Delta t  
 \end{equation*}
-where we evaluate the $ m(\mathbf{u}^n)$ each timestep according to Equation~\ref{eq:model_1_mdot}. The other time integration methods can be applied immediately from combining Equations~\ref{eq:model_1}, and~\ref{eq:time_int} to see that:
+where we evaluate the $ m(\mathbf{u}^n)$ each timestep according to Equation~\ref{eq:model_1_mdot}. The other time integration methods can be applied immediately from Equations~\ref{eq:model_1} to see that:
 \begin{equation}
     \begin{aligned}
         M &= I \\
@@ -54,9 +54,3 @@ for some methods a Jacobean improves performance, this can be given by:
     \end{pmatrix}
 \end{equation}
 applying either of the aforementioned methods gives the result for the perfectly stirred reactor.
-
-For the model where the gas density is constant, we can simply set $\rho_g = \rho_{g,f}$ and only integrate the solid density. This gives us a simple ODE:
-\begin{equation}
-    \dot{\rho}_s = m(\rho_{g,f}, \rho_s)
-\end{equation}
-and the jacobean is simply the derivative of $m$ with respect to $\rho_s$. 

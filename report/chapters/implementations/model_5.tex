@@ -1,1 +1,216 @@
-\subsection{Model 5: 2D Modelled flow with pressure based absorption}
+\subsection{Model 5: Two-dimensional modelled flow with pressure-dependent mass transfer}
+\label{subsec:model_5}
+
+Model 5 extends the one-dimensional formulation of Model~4 to two spatial dimensions. The physical assumptions, mass-transfer models, constant-temperature approximation, and time-integration method remain unchanged. The main difference is that the gas velocity is now a vector field $\mathbf v(\mathbf x,t)$ and all spatial derivatives are replaced by their two-dimensional counterparts.
+
+On a domain $\Omega\subset\mathbb R^2$, the governing equations become
+\begin{subequations}\label{eq:model_5_governing_equations}
+\begin{align}
+\rho_g\partial_t\mathbf v
+&=-RT\nabla\rho_g-\rho_g(\mathbf v\cdot\nabla)\mathbf v+\mu\nabla^2\mathbf v-\frac{\mu}{K}\mathbf v,\\
+\epsilon\partial_t\rho_g
+&=-\nabla\cdot(\rho_g\mathbf v)+\mu_g\nabla^2\rho_g-\dot m,\\
+(1-\epsilon)\partial_t\rho_s
+&=\dot m.
+\end{align}
+\end{subequations}
+The definitions of $\dot m$ for absorption and desorption are identical to those introduced in Model~4 and are therefore not repeated here.
+
+The inlet pressure is again imposed as an algebraic equation in the DAE residual. In two dimensions, the dynamic-pressure contribution depends on the magnitude of the velocity vector, giving
+\begin{equation}\label{eq:model5_pressure_residual}
+g_p(\rho_g,\mathbf v,t)
+=RT\rho_g+\frac{1}{2}\rho_g\lVert\mathbf v\rVert^2-p_{\mathrm{tot}}(t)=0.
+\end{equation}
+The remaining initial and boundary conditions are the two-dimensional counterparts of those used in Model~4.
+
+\subsubsection{Finite-element discretization}
+
+The density fields remain scalar-valued, whereas the velocity is approximated using vector-valued basis functions:
+\begin{equation}
+\mathbf v_h=\sum_i v^i\boldsymbol\phi_v^i,\qquad
+\rho_{g,h}=\sum_i\rho_g^i\phi_g^i,\qquad
+\rho_{s,h}=\sum_i\rho_s^i\phi_s^i.
+\end{equation}
+The solution vector retains the same block structure,
+\begin{equation}
+\mathbf u=
+\begin{pmatrix}
+\mathbf v\
+\boldsymbol\rho_g\
+\boldsymbol\rho_s\
+\end{pmatrix}.
+\end{equation}
+
+The gas and solid mass matrices are unchanged apart from integration over the two-dimensional domain:
+\begin{equation}
+(M_{\rho_g})_{ki}
+=\epsilon\int_\Omega\phi_g^k\phi_g^i\,d\Omega,\qquad
+(M_{\rho_s})_{ki}
+=(1-\epsilon)\int_\Omega\phi_s^k\phi_s^i\,d\Omega.
+\end{equation}
+The state-dependent velocity mass matrix becomes
+\begin{equation}\label{eq:model5_Mv}
+\left(M_v(\boldsymbol\rho_g)\right)_{ki}
+=\int_\Omega\rho_{g,h}\boldsymbol\phi_v^k\cdot\boldsymbol\phi_v^i\,d\Omega.
+\end{equation}
+
+The linear spatial operators are the two-dimensional equivalents of those in Model~4:
+\begin{align}
+P_{ki}
+&=-RT\int_\Omega\boldsymbol\phi_v^k\cdot\nabla\phi_g^i\,d\Omega,\\
+D_{ki}
+&=-\mu\int_\Omega\nabla\boldsymbol\phi_v^k:\nabla\boldsymbol\phi_v^i\,d\Omega,\\
+S_{ki}
+&=-\frac{\mu}{K}\int_\Omega\boldsymbol\phi_v^k\cdot\boldsymbol\phi_v^i\,d\Omega,\\
+ (D_g)_{ki}
+&=-\mu_g\int_\Omega\nabla\phi_g^k\cdot\nabla\phi_g^i\,d\Omega.
+\end{align}
+Here, $:$ denotes the Frobenius inner product between the velocity-gradient tensors.
+
+The nonlinear momentum-convection contribution becomes
+\begin{equation}\label{eq:model5_Cv}
+ (C_v)_{k}
+=-\int_\Omega\rho_{g,h}\boldsymbol\phi_v^k\cdot
+\left[(\mathbf v_h\cdot\nabla)\mathbf v_h\right]\,d\Omega.
+\end{equation}
+Equivalently, using the velocity-gradient tensor,
+\begin{equation}
+(\mathbf v_h\cdot\nabla)\mathbf v_h
+=(\nabla\mathbf v_h)\mathbf v_h.
+\end{equation}
+
+For the gas-density equation, integration by parts gives
+\begin{equation}\label{eq:model5_Crho}
+ (C_{\rho_g})_{k}
+=-\int_{\partial\Omega}\phi_g^k\rho_{g,h}\mathbf v_h\cdot\mathbf n\,d\Gamma
++\int_\Omega\nabla\phi_g^k\cdot(\rho_{g,h}\mathbf v_h)\,d\Omega.
+\end{equation}
+The boundary contribution vanishes on impermeable boundaries. On boundaries where the corresponding density equation is replaced by an algebraic pressure condition, the algebraic residual is used instead of the PDE row.
+
+The mass-transfer terms require no modification from the previous model. The vectors are
+\begin{equation}
+(\dot M_g)_{k}=\int_\Omega\phi_g^k\dot m\,d\Omega,\qquad
+(\dot M_s)_{k}=\int_\Omega\phi_s^k\dot m\,d\Omega.
+\end{equation}
+
+\subsubsection{Semi-discrete system}
+
+With the two-dimensional definitions above, the semi-discrete system has exactly the same block structure as Model~4:
+\begin{subequations}\label{eq:model5_semidis}
+\begin{align}
+M_v(\boldsymbol\rho_g)\dot{\mathbf v}
+&=P\boldsymbol\rho_g+D\mathbf v+S\mathbf v+C_v(\mathbf v,\boldsymbol\rho_g),\\
+M_{\rho_g}\dot{\boldsymbol\rho}_g
+&=C_{\rho_g}(\mathbf v,\boldsymbol\rho_g)+D_g\boldsymbol\rho_g-\dot M_g(\boldsymbol\rho_g,\boldsymbol\rho_s),\\
+M_{\rho_s}\dot{\boldsymbol\rho}_s
+&=\dot M_s(\boldsymbol\rho_g,\boldsymbol\rho_s).
+\end{align}
+\end{subequations}
+Hence,
+\begin{equation}
+M(\mathbf u)\dot{\mathbf u}=L\mathbf u+N(\mathbf u),
+\end{equation}
+with
+\begin{equation}
+M(\mathbf u)=
+\begin{pmatrix}
+M_v(\boldsymbol\rho_g)&0&0\\
+0&M_{\rho_g}&0\\
+0&0&M_{\rho_s}\\
+\end{pmatrix},
+\qquad
+L=
+\begin{pmatrix}
+D+S&P&0\\
+0&D_g&0\\
+0&0&0\\
+\end{pmatrix},
+\end{equation}
+and
+\begin{equation}
+N(\mathbf u)=
+\begin{pmatrix}
+C_v(\mathbf u)\\
+C_{\rho_g}(\mathbf u)-\dot M_g(\mathbf u)\\
+\dot M_s(\mathbf u)\\
+\end{pmatrix}.
+\end{equation}
+The same implicit residual formulation as in Model~4 is used,
+\begin{equation}\label{eq:model5_residual}
+\mathbf F(\mathbf u,\dot{\mathbf u},t)
+=M(\mathbf u)\dot{\mathbf u}-L\mathbf u-N(\mathbf u)=0.
+\end{equation}
+
+\subsubsection{Analytic Jacobian}
+
+The construction of the IDA Jacobian follows directly from Model~4,
+\begin{equation}
+W=J_{\mathbf u}+\gamma J_{\dot{\mathbf u}}.
+\end{equation}
+Its block structure is unchanged. Only the entries associated with the two-dimensional velocity and convection operators require modification.
+
+For the interior PDE equations,
+\begin{equation}
+J_{\dot{\mathbf u}}=
+\begin{pmatrix}
+M_v(\boldsymbol\rho_g)&0&0\\
+0&M_{\rho_g}&0\\
+0&0&M_{\rho_s}\\
+\end{pmatrix}.
+\end{equation}
+The derivative of the velocity mass term with respect to the gas density becomes
+\begin{equation}\label{eq:model5_JvgM}
+(J_{vg}^{M})_{ki}
+=\frac{\partial}{\partial\rho_g^i}
+\int_\Omega\rho_{g,h}\boldsymbol\phi_v^k\cdot\dot{\mathbf v}_h\,d\Omega
+=\int_\Omega\phi_g^i\boldsymbol\phi_v^k\cdot\dot{\mathbf v}_h\,d\Omega.
+\end{equation}
+
+The momentum-convection contribution to the residual is $-C_v$. Differentiation with respect to a velocity coefficient gives
+\begin{equation}\label{eq:model5_JvvC}
+(J_{vv}^{C})_{ki}=\int_\Omega\rho_{g,h}\boldsymbol\phi_v^k\cdot
+\left[
+(\nabla\mathbf v_h)\boldsymbol\phi_v^i
++(\nabla\boldsymbol\phi_v^i)\mathbf v_h
+\right],d\Omega,
+\end{equation}
+while differentiation with respect to the gas density gives
+\begin{equation}\label{eq:model5_JvgC}
+(J_{vg}^{C})_{ki}
+=\int_\Omega\phi_g^i\boldsymbol\phi_v^k\cdot
+\left[(\nabla\mathbf v_h)\mathbf v_h\right],d\Omega.
+\end{equation}
+
+For the conservative gas-density convection term, the interior Jacobian contributions are
+\begin{align}
+(J_{gv}^{C})_{ki}
+&=-\int_\Omega\rho_{g,h}\nabla\phi_g^k\cdot\boldsymbol\phi_v^i\,d\Omega,\\
+(J_{gg}^{C})_{ki}
+&=-\int_\Omega\phi_g^i\nabla\phi_g^k\cdot\mathbf v_h\,d\Omega.
+\end{align}
+These expressions are the direct two-dimensional counterparts of the convection derivatives derived for Model~4.
+
+The mass-transfer Jacobian is unchanged except that the integrations are performed over $\Omega\subset\mathbb R^2$. The derivatives $\partial\dot m/\partial\rho_g$ and $\partial\dot m/\partial\rho_s$ for both absorption and desorption are therefore taken directly from Model~4.
+
+The complete interior state Jacobian consequently retains the same block structure,
+\begin{equation}\label{eq:model5_Ju}
+J_{\mathbf u}=
+\begin{pmatrix}
+-(D+S)+J_{vv}^{C}&-P+J_{vg}^{M}+J_{vg}^{C}&0\\
+J_{gv}^{C}&-D_g+J_{gg}^{C}+J_{gg}^{\dot m}&J_{gs}^{\dot m}\\
+0&-J_{sg}^{\dot m}&-J_{ss}^{\dot m}\\
+\end{pmatrix}.
+\end{equation}
+
+Finally, the algebraic total-pressure boundary condition differs from its one-dimensional form only through the velocity magnitude. From Equation~\eqref{eq:model5_pressure_residual},
+\begin{equation}
+\frac{\partial g_p}{\partial\rho_g}
+=RT+\frac{1}{2}\lVert\mathbf v\rVert^2,\qquad
+\frac{\partial g_p}{\partial\mathbf v}
+=\rho_g\mathbf v,\qquad
+\frac{\partial g_p}{\partial\dot{\mathbf u}}=0.
+\end{equation}
+
+As in Model~4, the corresponding PDE row is replaced by this algebraic boundary residual and its row in $J_{\dot{\mathbf u}}$ is set to zero.
+
+The IDA implementation and independent IMEX verification are otherwise identical to Model~4 and are therefore not repeated.

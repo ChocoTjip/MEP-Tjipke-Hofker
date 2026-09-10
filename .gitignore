@@ -23,3 +23,6 @@ build/
 # old
 old/
 */gmsh tutorials/
+
+# Large generated solution files
+*.jld2

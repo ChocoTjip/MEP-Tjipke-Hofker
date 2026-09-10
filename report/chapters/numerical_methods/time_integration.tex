@@ -2,7 +2,7 @@
 
 In the previous section, the governing partial differential equations were spatially discretized. This transformed Equation~\ref{eq:general_pde_numerical_methods} into the semi-discrete system given by Equation~\ref{eq:semi_discrete_numerical_methods}. The spatial dependence is therefore represented by a finite number of degrees of freedom, while time remains continuous. The purpose of time integration is to transform this semi-discrete system into a system that can be solved at discrete points in time. That is what we will be tackling in this section. A few methods that we later apply will be described here.
 
-The simplest time integration methods are the forward and backward Euler methods. The forward Euler method is an explicit method, while the backward Euler method is an implicit method. Implicit is more accurate but computationally more expensive for non-linear problems, as it requires solving a system of equations at each time step. Explicit is easier to compute but less accurate, and requires smaller time steps for stability. Initially I wrote a combined method that uses implicit for linear terms and explicit for non-linear terms. This is an IMEX method, which we will describe in Section~\ref{subsubsec:num_IMEX}.
+The simplest time integration methods are the forward and backward Euler methods. The forward Euler method is an explicit method, while the backward Euler method is an implicit method. Implicit is more accurate but computationally more expensive for non-linear problems, as it requires solving a system of equations at each time step. Explicit is easier to compute but less accurate, and requires smaller time steps for stability. Initially I wrote a combined method that uses implicit for linear terms and explicit for non-linear terms. This is an IMEX method, which we will describe in Section~\ref{subsubsec:num_IMEX}. It is simple, but you lose control over step sizes, which results in uncertain accuracy. We implemented other Julia packages that do incorporate this, but found it usefull to have the IMEX method as a check on the new results.
 
 For our methods where the time-dependency is written in the form $Md\mathbf{u}/dt = \mathbf{f}(\mathbf{u},t)$, we can use the builtin Julia \texttt{Rodas5P} function. This method is an implicit fifth-order Rosenbrock--Wanner method, which we will briefly describe in Section~\ref{subsubsec:num_ROW}. This method is also used in the model validations using the Finite Difference Method.
 
@@ -111,7 +111,7 @@ The Rosenbrock--Wanner method is a one-step method, which means that it only use
 
 \subsubsection{Implicit Differential-Algebraic (IDA) Methods}\label{subsubsec:num_IDA}
 
-In our applications of Navier-Stokes, we have $\rho \dot{\mathbf{v}}$ at the left hand side as the momentum term, which gives us a density-dependent mass matrix. Since the control vector contains both $\rho$, and $\mathbf{v}$, we end up with a left hand side of the form $M(\mathbf{u})\dot{\mathbf{u}}$. The main issue with going about this problem in the same way as the previous sections, is that it requires a linear solve involving the state-dependent $M$ every time the RHS is evaluated, and it fails as an explicit reformulation if $M$ is singular. A method that would not need this extra linear solve are methods that look at a DAE (set of Differential Algebraic Equation). This can be viewed as a generalized backward Euler method, where we do not seperate partial derivatives wrt time to the lhs, and the rest to the rhs. It gives a very powerfull tool to solve any combination of differential and algebraic equations. In this section we will explain the mathematics stated in the sundials website\footnote{\url{https://sundials.readthedocs.io/en/latest/ida/Mathematics_link.html}} and their documentation for Julia\footnote{\url{https://docs.sciml.ai/DiffEqDocs/stable/types/dae_types/}}
+In our applications of Navier-Stokes, we have $\rho \dot{\mathbf{v}}$ at the left hand side as the momentum term, which gives us a density-dependent mass matrix. Since the control vector contains both $\rho$, and $\mathbf{v}$, we end up with a left hand side of the form $M(\mathbf{u})\dot{\mathbf{u}}$. The main issue with going about this problem in the same way as the previous sections, is that it requires a linear solve involving the state-dependent $M$ every time the RHS is evaluated, and it fails as an explicit reformulation if $M$ is singular. A method that would not need this extra linear solve are methods that look at a DAE (set of Differential Algebraic Equation). This can be viewed as a generalized backward Euler method, where we do not seperate partial derivatives wrt time to the lhs, and the rest to the rhs. It gives a very powerfull tool to solve any combination of differential and algebraic equations. In this section we will explain the mathematics stated in the sundials website and their documentation for Julia\cite{sundials_ida_math,sciml_daeproblem}
 
 
 The main idea is to write the residual as a function of not only $u$, but also $\dot{u}$:
@@ -125,7 +125,7 @@ To create an algorithm for solving for $\mathbf{u}^{n+1}$, we need a current sta
 \begin{equation}
     \dot{\mathbf{u}}^n = \frac{1}{h_n}\sum_{i=0}^q\alpha_{i}^n\mathbf{u}^{n-i},
 \end{equation}
-where $h_n$ is the step size, and the coefficients $\alpha_{i}^n$ are uniquely determined by the order and previous step sizes. For now we take a simple first order which corresponds to backwards Euler:
+where $h_n$ is the step size, and the coefficients $\alpha_{i}^n$ are uniquely determined by the order and previous step sizes. This method of approximating the derivative using a linear combination of current and previous values of $\mathbf{u}$ is known as the Backward Differentiation Formula (BDF). For now we take a simple first order which corresponds to backwards Euler:
 \begin{equation}
     \frac{1}{h_n}(\mathbf{u}^{n}-\mathbf{u}^{n-1})=\dot{\mathbf{u}}^n,
 \end{equation}
@@ -164,3 +164,25 @@ which gives the Jacobian of the residual function as:
 We should keep in mind this is the Jacobian for the IDA method of order 1. Higher orders change the coefficients $\alpha_i^n$ and $h_n$, but the principle remains the same. IDA can compute the Jacobians automatically using automatic differentiation as well. 
 
 I like to also note the resemblence to Equation~\ref{eq:num_jacobian_residual_implicit_euler_gamma}. Indeed, the linear implicit Newton method can be seen as a special case of the IDA method, where the mass matrix is constant and the residual function is linear in $\dot{\mathbf{u}}$. In that case, the derivative with respect to $\dot{\mathbf{u}}$ becomes $M$, and the Jacobian of the residual function simplifies to $J_R = M - \gamma_n J_f$, which is exactly what we derived in that section.
+
+\subsubsection{Adaptive time-step selection}
+\label{subsubsec:num_adaptive_timestep}
+
+The IDA solver does not use a prescribed constant time step. Instead, both the time-step size $h$ and the order $q$ of the BDF (Backward Differentiation Formula, as described in the previous section) method are adapted during the simulation based on an estimate of the local truncation error \cite{hindmarsh2005sundials,sundials_ida_math}.
+
+Since the different components of the solution vector can have very different magnitudes, IDA scales the estimated error using the relative and absolute tolerances. For solution component $u_i$, the corresponding error weight is
+\begin{equation}
+W_i=\frac{1}{\mathrm{rtol}|u_i|+\mathrm{atol}_i}.
+\end{equation}
+Where $\mathrm{rtol}$ is the relative tolerance, which is generally a constant for all components, and $\mathrm{atol}_i$ is the absolute tolerance for component $i$ (atol can be a scalar or a vector). The absolute tolerance prevents the weight to blow up when $u_i$ is very small. Using these weights, the local truncation error is required to satisfy
+\begin{equation}
+|\mathrm{LTE}|_{\mathrm{WRMS}}\leq 1.
+\end{equation}
+
+Where $||\mathrm{LTE}|_{\mathrm{WRMS}}$ is the weighted root-mean-square norm of the local truncation error. If this error test fails, the time step is rejected and repeated using a smaller value of $h$. If the estimated error is sufficiently small, a larger time step can be used for the following step. The step-size selection follows from the asymptotic behaviour
+\begin{equation}
+\mathrm{LTE}\propto h^{q+1},
+\end{equation}
+which allows IDA to estimate how the time-step size should be changed. The BDF order is adapted in a similar manner, with IDA using orders between one and five \cite{sundials_ida_math}.
+
+Consequently, small time steps are automatically taken during rapid transients, while larger time steps can be taken as the solution approaches a slowly varying or steady state.

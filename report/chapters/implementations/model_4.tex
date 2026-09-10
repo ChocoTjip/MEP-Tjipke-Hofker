@@ -1,222 +1,349 @@
-\subsection{Model 4: 1D Modelled flow with pressure based absorption}
-In this section we will be modelling the flow together with pressure as described in Section~\ref{subsec:flow_model}. The model will have diffusion of hydrogen gas and convection with a flow speed that is calculated from the pressure. The battery will be on the domain $\Omega = (0,L)$, where $L$ is the length of the battery, so the domain is the same as in Figure~\ref{fig:model_2_domain}. The left boundary will be the inflow of hydrogen gas, and the right boundary will be the outflow of hydrogen gas. Since we now also model the pressure we can assume pure hydrogen gas everywhere, and adjust the gas absorption with its intended pressure dependency. It also assumes constant temperature, and ideal gas law: $p=\rho_g RT$. The model also takes into account viscous dissipation of a porous medium. They are given as the 1D version of Equation~\ref{eq:phy_model_4}:
+\subsection{Model 4: One-dimensional modelled flow with pressure-dependent mass transfer}
+\label{subsec:model_4}
+
+In the previous models, the hydrogen velocity was prescribed. In the present model, the gas velocity is instead obtained from the momentum equation, such that the hydrogen flow responds directly to changes in pressure. The model combines compressible gas flow, hydrogen transport, and pressure-dependent mass transfer while assuming a constant temperature throughout the storage material.
+
+The model is defined on the one-dimensional domain $\Omega=(0,L)$. Since the gas is assumed to consist of pure hydrogen and the temperature is constant, the ideal-gas is used. The governing equations are
 \begin{subequations}\label{eq:model_4_governing_equations}
-    \begin{align}
-    \rho_g \partial_t v &=-RT\partial_x\rho_g-\rho_g v \partial_x v+\mu\partial_x^2 v -S \label{eq:model_4_v}\\
-    \partial_t\rho_g&=-(\partial_x \rho_g)v-\rho_g (\partial_x v) + \mu_\epsilon\partial_x^2\rho_g-\dot m \label{eq:model_4_rhog}\\
-    \partial_t \rho_s &= \dot m \label{eq:model_4_rhos}
-    \end{align}
+\begin{align}
+\rho_g\partial_t v &= -RT\partial_x\rho_g-\rho_gv\partial_xv+\mu\partial_x^2v-\frac{\mu}{K}v, \label{eq:model_4_v}\\
+\epsilon\partial_t\rho_g &= -\partial_x(\rho_gv)+\mu_g\partial_x^2\rho_g-\dot m, \label{eq:model_4_rhog}\\
+(1-\epsilon)\partial_t\rho_s &= \dot m. \label{eq:model_4_rhos}
+\end{align}
 \end{subequations}
+Here, $\rho_g$ is the hydrogen gas density, $\rho_s$ the absorbed hydrogen density in the solid material, $v$ the gas velocity, $\epsilon$ the porosity, $\mu$ the dynamic viscosity, and $K$ the permeability of the porous medium. The additional diffusion coefficient $\mu_g$ is introduced numerically to suppress oscillations in the gas-density solution.
 
-Where $\rho_g$ is the density of H2 in the air, now seen as a true density, instead of a ratio. $\rho_s$ is the amount of hydrogen in the solid Metal Organic Framework, $v$ is the flow speed, $\mu$ is the viscosity of the gas, and $\mu_\epsilon$ is the diffusion coefficient, this is required numerically to avoid instabilities and oscilations (even when using upwind schemes). The absorption and viscous dissipation are given by:
+At constant temperature, the absorption rate is given by
+\begin{equation}\label{eq:model4_mdot}
+\dot m(\rho_g,\rho_s)=A_a\log\left(\frac{RT\rho_g}{p_{eq,a}}\right)(\rho_{sat}-\rho_s).
+\end{equation}
+And if we look at desorption, we have
+\begin{equation}\label{eq:model4_mdot_desorption}
+\dot m(\rho_g,\rho_s)=A_d\left(\frac{RT\rho_g}{p_{eq,d}}-1\right)(\rho_s-\rho_{e}),
+\end{equation}
+
+The initial conditions are
+\begin{equation}
+v(x,0)=0,\qquad \rho_g(x,0)=\rho_{g,0},\qquad \rho_s(x,0)=\rho_{s,0}.
+\end{equation}
+Where the initial density for both the gas and solid are dependent on whether we start with absorption or desorption. No spatial boundary condition is required for $\rho_s$, since Equation~\eqref{eq:model_4_rhos} contains no spatial derivatives.
+
+For the velocity, the boundary conditions are
+\begin{equation}
+\partial_xv(0,t)=0,\qquad v(L,t)=0.
+\end{equation}
+
+At the hydrogen inlet, the applied pressure is imposed through the combination of static and dynamic pressure,
+\begin{equation}
+p_{\mathrm{tot}}=\rho_gRT+\frac{1}{2}\rho_gv^2.
+\end{equation}
+Instead of explicitly solving this relation for the inlet density, it is included directly in the implicit residual as the algebraic boundary equation
+\begin{equation}\label{eq:model4_pressure_residual}
+g_p(\rho_g,v,t)=RT\rho_g+\frac{1}{2}\rho_gv^2-p_{\mathrm{tot}}(t)=0.
+\end{equation}
+The prescribed inlet pressure is increased rapidly but continuously at the beginning of the simulation to avoid the very small initial time steps caused by a discontinuous pressure step.
+
+\subsubsection{Finite-element discretization}
+
+The three solution fields are approximated as
+\begin{equation}
+v_h=\sum_iv^i\phi_v^i,\qquad \rho_{g,h}=\sum_i\rho_g^i\phi_g^i,\qquad \rho_{s,h}=\sum_i\rho_s^i\phi_s^i,
+\end{equation}
+with solution vector
+\begin{equation}
+\mathbf u=\begin{pmatrix}\mathbf v\\\boldsymbol\rho_g\\\boldsymbol\rho_s\end{pmatrix}.
+\end{equation}
+
+The standard mass matrices for the gas and solid density fields are
+\begin{equation}
+(M_{\rho_g})_{ki}=\epsilon\int_\Omega\phi_g^k\phi_g^i\,dx,\qquad
+(M_{\rho_s})_{ki}=(1-\epsilon)\int_\Omega\phi_s^k\phi_s^i\,dx.
+\end{equation}
+The momentum equation differs from the previous models because the time derivative of the velocity is multiplied by $\rho_g$. Its mass matrix therefore depends on the current solution:
+\begin{equation}\label{eq:model4_Mv}
+\left(M_v(\boldsymbol\rho_g)\right)_{ki}=\int_\Omega\phi_v^k\rho_{g,h}\phi_v^i\,dx.
+\end{equation}
+Consequently, the semi-discrete momentum equation contains $M_v(\boldsymbol\rho_g)\dot{\mathbf v}$. Explicitly reformulating the equations as an ordinary differential equation would therefore require solving a linear system involving the state-dependent mass matrix whenever the right-hand side is evaluated. The system is instead retained in implicit residual form and solved directly using IDA.
+
+The linear spatial operators are defined by
 \begin{align}
-    \dot m &= A\log(\frac{p_g}{p_{eq,a}})(\rho_{sat}-\rho_s)\\
-    S &= \frac{\mu}{K}v
+P_{ki} &= -RT\int_\Omega\phi_v^k\partial_x\phi_g^i\,dx,\\
+D_{ki} &= -\mu\int_\Omega\partial_x\phi_v^k\partial_x\phi_v^i\,dx,\\
+S_{ki} &= -\frac{\mu}{K}\int_\Omega\phi_v^k\phi_v^i\,dx,\\
+(D_g)_{ki} &= -\mu_g\int_\Omega\partial_x\phi_g^k\partial_x\phi_g^i\,dx.
 \end{align}
-under IC:
-\begin{equation}
-\left\{ \begin{aligned}
-\rho_g(x,0) &= 1 \\
-v(x,0) &= 0
-\end{aligned}\right.
+The signs are included in the definitions of the operators, such that these matrices can be added directly to the corresponding right-hand sides.
+
+The nonlinear momentum-convection contribution is
+\begin{equation}\label{eq:model4_Cv}
+(C_v)_{k}=-\int_\Omega\phi_v^k\rho_{g,h}v_h\partial_xv_h\,dx.
 \end{equation}
-(the solid doesn't need a boundary condition since it is not really coupled to its surroundings), and BC:
-\begin{equation}
-\left\{\begin{aligned}
-    v(L,t) &= 0\\
-\rho_g(0,t) &= 2-e^{-10t} \\
-\partial_x v(0,t) &= 0 \\
-\end{aligned}\right.
+For the gas-density equation, integration by parts of the conservative convection term gives
+\begin{equation}\label{eq:model4_Crho}
+(C_{\rho_g})_{k}=-\left[\phi_g^k\rho_{g,h}v_h\right]_{\partial\Omega}+
+\int_\Omega\partial_x\phi_g^k\rho_{g,h}v_h\,dx.
 \end{equation}
-where we use a steep increase in density at the inlet to simulate a step function, since a discontinuity gives extremely low initial time steps. The BC for the velocity is a no-slip condition at the outlet, and a zero gradient at the inlet. 
+Integration by parts additionally produces the boundary flux term
+$-[\phi_g^k\rho_gv]_{\partial\Omega}$. At the solid wall boundaries, this contribution vanishes because $v(L,t)=0$. At the inlet the hydrogen flux is generally nonzero. However, the gas-density PDE row associated with the inlet degree of freedom is replaced by the algebraic total-pressure condition, and therefore the corresponding PDE boundary contribution does not enter the final residual system.
 
-We will expand $\rho_g$, $\rho_s$, and $v$ as:
-\begin{equation*}
-    \begin{aligned}
-         v(x,t) &= \sum_j v^j(t) \phi^j(x) \\
-    \rho_g(x,t) &= \sum_i \rho_{g}^i(t) \phi^i(x) \\
-    \rho_s(x,t) &= \sum_i \rho_{s}^i(t) \phi^i(x) \\
-    \end{aligned}
-\end{equation*}
-with our solutionvector:
-
-\begin{equation*}
-    \mathbf u = \begin{pmatrix}\mathbf{v}\\\boldsymbol{\rho}_g\\\boldsymbol{\rho}_s\end{pmatrix} = \begin{pmatrix}
-        v^1        \\ \vdots \\ v^{N_2}      \\
-        \rho_{g}^1 \\ \vdots \\ \rho_{g}^{N_1} \\ 
-        \rho_{s}^1 \\ \vdots \\ \rho_{s}^{N_1} \\ 
-    \end{pmatrix}
-\end{equation*}
-
-we will also need an expansion of the mass transfer term:
+The local absorption rate is evaluated as
 \begin{equation}
-    \dot m(x,t) = \sum_i \dot m^i(t) \phi^i(x)
+\dot m_q=A_a\log\left(\frac{RT\rho_{g,q}}{p_{eq,a}}\right)(\rho_{sat}-\rho_{s,q}).
 \end{equation}
-which we will approximate at the terms using our knowledge that on nodes the only non-zero basis function is the one corresponding to that node, so we can approximate the mass transfer term as:
+and for desorption it becomes
 \begin{equation}
-    \dot m^i(t) = A_a\log\left(\frac{RT \rho_g^i(t)}{p_{eq,a}}\right)(\rho_{sat}-\rho_s^i(t))
+\dot m_q=A_d\left(\frac{RT\rho_{g,q}}{p_{eq,d}}-1\right)(\rho_{s,q}-\rho_{e}-).
 \end{equation}
-and again we use bold notation for the vector of mass transfer terms:
-\begin{equation*}
-    \dot{\mathbf{m}} = \begin{pmatrix}
-        \dot m^1 \\ \vdots \\ \dot m^{N_1}
-    \end{pmatrix}
-\end{equation*}
-
-\subsubsection*{velocity}
-If we look at at the left hand side of Equation~\ref{eq:model_4_v} and multiply by test functions $\phi^k$, integrate and expand as above, we get:
-
-\begin{equation}
-    M_v(\mathbf{u})\dot{\mathbf{u}} = \sum_j\left(\sum_i\rho_i\int_\Omega \phi^i\phi^j\phi^k\,dx\right)(\partial_t \mathbf{u})
+The resulting mass transfer residual vectors are defined as:
+\begin{equation}\label{eq:model4_absorption_vectors}
+(\dot{M}_g)_{k}=\int_\Omega\phi_g^k\dot m\,dx,\qquad
+(\dot{M}_s)_{k}=\int_\Omega\phi_s^k\dot m\,dx.
 \end{equation}
-where row $k$ and column $j$ correspond to:
+These nonlinear integrals are evaluated cell-wise using the third-order interpolation quadrature rule used for the nonlinear assembly.
 
-\begin{equation*}
-    (M_v)_{kj} = \sum_i\rho_i\int \phi^i\phi^j\phi^k\,dx
-\end{equation*}
-I plan on precalculating the integrals into a tensor:
+\subsubsection{Semi-discrete system}
 
-\begin{equation*}
-    T_{ijk} = \int \phi^i\phi^j\phi^k\,dx
-\end{equation*}
-simplifying:
-\begin{equation*}
-(M_v)_{kj}=\sum_i {\rho_i}T_{ijk}
-\end{equation*}
-For the RHS of the first equation we get (after integration and multiplying by $\phi^k$) term for term:
-
-\begin{equation*}
-\begin{aligned}
-    {(P\boldsymbol{\rho})}_k &= -RT\sum_i\left(\int \phi^k\phi^i\,dx\right)\rho_i \\
-    {(D\mathbf{v})}_k &= -\mu\sum_i\left(\int\partial_x\phi^k\partial_x\phi^i\,dx\right) v_i 
-    % & \text{negative sign due to integration by parts}
-    \\
-    {(S\mathbf{v})}_k &= -\frac{\mu}{K}\sum_i\left(\int \phi^k\phi^i \, dx \right)v_i
-\end{aligned}
-\end{equation*}
-
-For the convection term we have:
-\begin{equation*}
-    {(C_{v})}_k = \int_\Omega \phi^k \rho_g v \partial_x v \, dx
-\end{equation*}
-which we will approximate using a quadrature rule. Combining all gives us:
-
-\begin{equation}
-    M_v(\boldsymbol{\rho}) \dot{\mathbf{v}}=P\boldsymbol{\rho}+D\mathbf{v}+S\mathbf{v}+C_{v}(\mathbf{v},\boldsymbol{\rho})
-\end{equation}
-
-\subsubsection*{Density}
-For Equation~\ref{eq:model_4_rhog} we look at the conservation of mass (the LHS of the equation):
-\begin{equation*}
-\sum_i\left(\int\phi^i\phi^k\,dx\right)(\partial_t\rho_i)={(M_\rho\dot{\mathbf{u}})}_k
-\end{equation*}
-and the first term in the RHS, our convection of density, becomes:
-\begin{equation*}
-    {(C_{\rho_g}(\mathbf{u}))}_k = -\int\phi^k\partial_x(\rho v)dx = -{\left[ \phi^k\rho v\right]}_{x\in\delta\Omega}+\int(\partial_x\phi^k)v \rho\, dx
-\end{equation*}
-Where we can see that the boundary at $x=L$ becomes $0$ due to the boundary condition on the velocity there, but at $x=0$ we can not discard the term since we have non-zero velocity and pressure, and not a Dirichlet condition on the 
-
-The diffusion familiarly becomes:
-\begin{equation*}
-    \mu_\epsilon\sum_i\left(\int\partial_x\phi^k\partial_x\phi^i\,dx\right) \rho_i = D_\epsilon \mathbf{\rho}
-\end{equation*}
-The mass transfer term is given by:
-\begin{equation*}
-\begin{aligned}
-    -\int\phi^k\dot m dx &= -\int \phi^k \sum_i \dot m^i(t) \phi^i(x) dx \\
-    &= -\sum_i \dot m^i(t) \int \phi^k \phi^i dx \\
-    &= -M_{{\rho_g}} \dot{\mathbf{m}}
-\end{aligned}
-\end{equation*}
-where:
-\begin{equation*}
-    \dot{m}^i = A_a\log\left(\frac{RT \rho_g^i(t)}{p_{eq,a}}\right)(\rho_{sat}-\rho_s^i(t))
-\end{equation*}
-which we can summarize by:
-\begin{equation}
-M_{\rho_g}\dot{\boldsymbol{\rho}}_g=C_{\rho_g}(\mathbf{u})+D_\epsilon \boldsymbol{\rho}_g-M_{{\rho_g}}\dot{\mathbf{m}}(\mathbf{u})
-\end{equation}
-
-Since the density for the solid is only affected by the mass transfer term, we get from equation~\ref{eq:model_4_rhos}:
-\begin{equation}
-    M_{\rho_s}\dot{\boldsymbol{\rho}}_s = M_{{\rho_s}}\dot{\mathbf{m}}(\mathbf{u})
-\end{equation}
-
-\subsubsection*{Semi-Discrete form}
-If we combine all above we get the following semi-discrete form of the system of equations:
-\begin{equation}
-\begin{aligned}
-M_v(\boldsymbol{\rho}_g)\dot{\mathbf{v}}&=C_v(\mathbf{u})+P\boldsymbol{\rho}_g+D\mathbf{v} + S\mathbf{v}\\
-M_{\rho_g}\dot{\boldsymbol{\rho}}_g&=C_{\rho_g}(\mathbf{u})+D_\epsilon \boldsymbol{\rho}_g-M_{{\rho_g}}\dot{\mathbf{m}}(\mathbf{u})\\
-M_{\rho_s}\dot{\boldsymbol{\rho}}_s&=M_{{\rho_s}}\dot{\mathbf{m}}(\mathbf{u})
-\end{aligned}
-\end{equation}
-which can be summarized into:
+The spatially discretized equations are therefore
+\begin{subequations}\label{eq:model4_semidis}
+\begin{align}
+M_v(\boldsymbol\rho_g)\dot{\mathbf v} &= P\boldsymbol\rho_g+D\mathbf v+S\mathbf v+C_v(\mathbf v,\boldsymbol\rho_g),\\
+M_{\rho_g}\dot{\boldsymbol\rho}_g &= C_{\rho_g}(\mathbf v,\boldsymbol\rho_g)+D_g\boldsymbol\rho_g-\dot{M}_g(\boldsymbol\rho_g,\boldsymbol\rho_s),\\
+M_{\rho_s}\dot{\boldsymbol\rho}_s &= \dot{M}_s(\boldsymbol\rho_g,\boldsymbol\rho_s).
+\end{align}
+\end{subequations}
+This may be written compactly as
 \begin{equation}\label{eq:model_4_semi_discrete}
-    M(\mathbf{u})\dot{\mathbf{u}} = L[\mathbf{u}]+N(\mathbf{u}),
+M(\mathbf u)\dot{\mathbf u}=L\mathbf u+N(\mathbf u),
 \end{equation}
-where:
+where
 \begin{equation}
-    \begin{aligned}
-    M(\mathbf{u}) &= \begin{pmatrix}
-    M_v(\boldsymbol{\rho}_g) & 0 & 0 \\
-    0 & M_{\rho_g} & 0 \\
-    0 & 0 & M_{\rho_s}
-    \end{pmatrix}, \\
-    L &= \begin{pmatrix}
-        D+S & P & 0 \\
-        0 & D_\epsilon & 0 \\
-        0 & 0 & 0
-    \end{pmatrix}, \\
-    N(\mathbf{u}) &= \begin{pmatrix}C_v(\mathbf{u}) \\ C_{\rho_g}(\mathbf{u}) \\ 0\end{pmatrix}+M_m\begin{pmatrix}
-    0 \\ -\dot{\mathbf{m}}(\mathbf{u}) \\ \dot{\mathbf{m}}(\mathbf{u})
-    \end{pmatrix}, \\
-    M_m &= \begin{pmatrix}
-    0 & 0 & 0 \\
-    0 & M_{{\rho_g}} & 0 \\
-    0 & 0 & M_{{\rho_s}}
-    \end{pmatrix}.
-\end{aligned} 
+M(\mathbf u)=
+\begin{pmatrix}
+M_v(\boldsymbol\rho_g)&0&0\\
+0&M_{\rho_g}&0\\
+0&0&M_{\rho_s}
+\end{pmatrix},
+\qquad
+L=
+\begin{pmatrix}
+D+S&P&0\\
+0&D_g&0\\
+0&0&0
+\end{pmatrix},
+\end{equation}
+and
+\begin{equation}
+N(\mathbf u)=
+\begin{pmatrix}
+C_v(\mathbf u)\\
+C_{\rho_g}(\mathbf u)-\dot{M}_g(\mathbf u)\\
+\dot{M}_s(\mathbf u)
+\end{pmatrix}.
 \end{equation}
 
-\subsubsection*{IMEX Scheme}
-To apply the IMEX scheme, we use a similar approach as done in Section~\ref{subseq:model_2}. We take all linear parts implicit, and non-linear parts explicit, and apply forward Euler. This gives the following time-integration based on Equation~\ref{eq:model_4_semi_discrete}:
-\begin{equation}
-    A(\mathbf{u}^n)\mathbf{u}^{n+1} = B(\mathbf{u}^n)\mathbf{u}^{n} + N(\mathbf{u}^n)
+\subsubsection{Implicit residual formulation}
+
+The system is solved using the IDA method introduced in Section~\ref{subsubsec:num_IDA}. The semi-discrete equations are supplied directly in residual form,
+\begin{equation}\label{eq:model4_residual}
+\mathbf F(\mathbf u,\dot{\mathbf u},t)=M(\mathbf u)\dot{\mathbf u}-L\mathbf u-N(\mathbf u)=0.
 \end{equation}
-where:
+For degrees of freedom on which a boundary condition is imposed strongly, the corresponding PDE residual equation is replaced by the appropriate algebraic boundary residual. Standard Dirichlet conditions take the form
+\begin{equation}
+g_D=u_i-\bar u_i(t)=0,
+\end{equation}
+whereas the pressure condition at the inlet is given by Equation~\eqref{eq:model4_pressure_residual}.
+
+Although IDA can approximate the required Jacobian automatically, explicitly assembling this matrix was found to considerably improve the computational performance.
+
+\subsubsection{Analytic Jacobian}
+
+As derived in Section~\ref{subsubsec:num_IDA}, the Newton matrix used by IDA is
+\begin{equation}\label{eq:model4_IDA_jacobian}
+W=J_{\mathbf u}+\gamma J_{\dot{\mathbf u}}
+=\frac{\partial\mathbf F}{\partial\mathbf u}
++\gamma\frac{\partial\mathbf F}{\partial\dot{\mathbf u}}.
+\end{equation}
+Only the model-specific derivatives therefore need to be constructed here.
+
+For the interior PDE equations, differentiation with respect to the time derivatives gives
+\begin{equation}\label{eq:model4_Jdu}
+J_{\dot{\mathbf u}}=
+\begin{pmatrix}
+M_v(\boldsymbol\rho_g)&0&0\\
+0&M_{\rho_g}&0\\
+0&0&M_{\rho_s}
+\end{pmatrix}.
+\end{equation}
+The constant density mass matrices are assembled once. The nonlinear part of $M_v$ also depends on the state vector $\rho_g$, introducing an additional contribution to $J_{\mathbf u}$. Differentiation with respect to $\rho_g^i$ gives
+\begin{equation}\label{eq:model4_JuM}
+\left(J_{vg}^M\right)_{ki}(\dot{\mathbf v})
+:=
+\frac{\partial}{\partial\rho_g^i}
+\int_\Omega\phi_v^k\rho_{g,h}\dot v_h\,dx
+=
+\int_\Omega\phi_v^k\phi_g^i\dot v_h\,dx.
+\end{equation}
+Where the subscript in $J_{vg}^M$ indicates that it is the derivative of a term corresponding to a velocity test function, with respect to the gas density. The superscript $M$ denotes that this contribution comes from the mass matrix term.
+
+The contribution of the momentum-convection term to the residual is $-C_v$. Its derivatives are therefore
 \begin{align}
-    A(\mathbf{u}^n) &= \begin{pmatrix}
-    \frac{M_v(\boldsymbol{\rho}_g^n)}{\Delta t}-D-S & -P & 0 \\ 
-    0 & \frac{M_{\rho_g}}{\Delta t}-D_\epsilon & 0 \\
-    0 & 0 & \frac{M_{\rho_s}}{\Delta t}
-    \end{pmatrix}, \\
-    B(\mathbf{u}^n) &= \begin{pmatrix}
-    \frac{M_v(\boldsymbol{\rho}_g^n)}{\Delta t} & 0 & 0 \\
-    0 & \frac{M_{\rho_g}}{\Delta t} & 0 \\
-    0 & 0 & \frac{M_{\rho_s}}{\Delta t}
-    \end{pmatrix}, \\
-    N(\mathbf{u}^n) &= \begin{pmatrix}
-    C_v(\mathbf{u}^n) \\ C_{{\rho}_g}(\mathbf{u}^n)-M_{{\rho_g}}\dot{\mathbf{m}}(\mathbf{u}^n) \\ M_{{\rho_s}}\dot{\mathbf{m}}(\mathbf{u}^n)
-    \end{pmatrix}
+(J_{vv}^{C})_{ki}
+&=\int_\Omega\phi_v^k\rho_{g,h}
+\left(\phi_v^i\partial_xv_h+v_h\partial_x\phi_v^i\right)\,dx,\\
+(J_{vg}^{C})_{ki}
+&=\int_\Omega\phi_v^k\phi_g^iv_h\partial_xv_h\,dx.
 \end{align}
-After applying this scheme we get the 
+These expressions correspond directly to the two nonlinear momentum-convection contributions assembled in the velocity rows of the Jacobian.
 
-\subsubsection*{Julia Solver}
-For the Julia solver we need to define an equation of the form $A(\mathbf{u}^n)\dot{\mathbf{u}} = \mathbf{rhs}(\mathbf{u})$. From Equation~\ref{eq:model_4_semi_discrete} we can immediately see that:
-
+For the conservative convection term in the gas-density equation, the interior contributions to the residual Jacobian are
 \begin{align}
-    A(\mathbf{u}) &= M(\mathbf{u}) \\
-    \mathbf{rhs}(\mathbf{u}) &= L[\mathbf{u}]+N(\mathbf{u})
+(J_{g v}^{C})_{ki}
+&=-\int_\Omega\partial_x\phi_g^k\,\rho_{g,h}\phi_v^i\,dx,\\
+(J_{gg}^{C})_{ki}
+&=-\int_\Omega\partial_x\phi_g^k\,v_h\phi_g^i\,dx.
 \end{align}
-Julia then automatically applies pre-defined schemes that also use adjustable time steps.
+Boundary rows that are replaced by algebraic boundary conditions are treated separately and therefore do not use the corresponding PDE Jacobian row.
 
-\subsubsection*{Total pressure}
-As described in Section~\ref{subsec:flow_model}, we can calculate the total pressure at a certain point as:
-\begin{equation}
-    p_{tot}(x,t) = p_{v}+RT\rho_g(x,t) = \frac{1}{2}\rho_g(x,t)v^2(x,t)+RT\rho_g(x,t)
+The mass transfer Jacobian is assembled using the same cell-wise quadrature procedure as the mass transfer residual. In the case of absorption, this becomes, to be evaluated at each quadrature point,
+\begin{align}
+\frac{\partial\dot m}{\partial\rho_g}
+&=A_a\frac{\rho_{sat}-\rho_s}{\rho_g},\\
+\frac{\partial\dot m}{\partial\rho_s}
+&=-A_a\log\left(\frac{RT\rho_g}{p_{eq,a}}\right).
+\end{align}
+and for desorption, this becomes:
+\begin{align}
+\frac{\partial\dot m}{\partial\rho_g}
+&=-A_d\frac{RT}{p_{eq,d}}{(\rho_{e}-\rho_s)},\\
+\frac{\partial\dot m}{\partial\rho_s}
+&=A_d\left(\frac{RT\rho_g}{p_{eq,d}}-1\right).
+\end{align}
+
+Defining
+\begin{align}
+(J_{gg}^{\dot m})_{ki}
+&=\int_\Omega\phi_g^k\phi_g^i
+\frac{\partial\dot m}{\partial\rho_g}\,dx,\\
+(J_{gs}^{\dot m})_{ki}
+&=\int_\Omega\phi_g^k\phi_s^i
+\frac{\partial\dot m}{\partial\rho_s}\,dx,\\
+(J_{sg}^{\dot m})_{ki}
+&=\int_\Omega\phi_s^k\phi_g^i
+\frac{\partial\dot m}{\partial\rho_g}\,dx,\\
+(J_{ss}^{\dot m})_{ki}
+&=\int_\Omega\phi_s^k\phi_s^i
+\frac{\partial\dot m}{\partial\rho_s}\,dx,
+\end{align}
+the signs of these matrices follow directly from the residual: absorption enters positively in the gas residual and negatively in the solid residual.
+
+Combining the linear and nonlinear contributions gives the interior state Jacobian
+\begin{equation}\label{eq:model4_Ju}
+J_{\mathbf u}=
+\begin{pmatrix}
+-(D+S)+J_{vv}^{C}&-P+J_{vg}^{M}+J_{vg}^{C}&0\\
+J_{g v}^{C}&-D_g+J_{gg}^{C}+J_{gg}^{\dot m}&J_{gs}^{\dot m}\\
+0&-J_{sg}^{\dot m}&-J_{ss}^{\dot m}
+\end{pmatrix}.
 \end{equation}
-Where $p_v$ is the pressure due to the velocity of the gas. We can set this boundary to any function we want to, say $2-e^{-10t}$ (to simulate a quick increase to a total pressure of $2$). This is a more physical boundary condition than setting the density to a certain value, since it takes into account the velocity of the gas. We can then calculate the density at the inlet as (and this we apply for the boundary condition):
+
+The algebraic boundary rows subsequently replace the corresponding PDE rows in both $J_{\mathbf u}$ and $J_{\dot{\mathbf u}}$. For a standard Dirichlet condition $g_D=u_i-\bar u_i(t)=0$,
 \begin{equation}
-    \rho_g(0,t) = \frac{2-e^{-10t}}{\frac{1}{2}v^2(0,t)+RT} = 2
+\frac{\partial g_D}{\partial u_i}=1,\qquad
+\frac{\partial g_D}{\partial\dot{\mathbf u}}=0.
 \end{equation}
+The corresponding row of $J_{\dot{\mathbf u}}$ is therefore set to zero, while the row of $J_{\mathbf u}$ contains only a unit diagonal entry.
+
+For the nonlinear inlet-pressure condition,
+\begin{equation}
+g_p=RT\rho_g+\frac{1}{2}\rho_gv^2-p_{\mathrm{tot}}(t)=0,
+\end{equation}
+the required derivatives are
+\begin{equation}\label{eq:model4_pressure_jacobian}
+\frac{\partial g_p}{\partial\rho_g}
+=RT+\frac{1}{2}v^2,\qquad
+\frac{\partial g_p}{\partial v}
+=\rho_gv,\qquad
+\frac{\partial g_p}{\partial\dot{\mathbf u}}=0.
+\end{equation}
+
+After replacing all boundary rows, the final matrix supplied to IDA is assembled as
+\begin{equation}
+W=J_{\mathbf u}+\gamma J_{\dot{\mathbf u}}.
+\end{equation}
+For algebraic boundary rows, the $\gamma J_{\dot{\mathbf u}}$ contribution vanishes because their corresponding rows in $J_{\dot{\mathbf u}}$ are zero.
+
+\subsubsection{Consistent initialization}
+
+The implicit residual formulation requires an initial state $\mathbf u_0$ and corresponding initial time derivative $\dot{\mathbf u}_0$. The initial state is chosen such that all prescribed initial and algebraic boundary conditions are satisfied. We derive an initial derivative from the semi-discrete equations.
+
+For the interior degrees of freedom, the initial derivative follows from
+\begin{equation}
+M(\mathbf u_0)\dot{\mathbf u}_0=N(\mathbf u_0),
+\end{equation}
+where $N$ denotes the complete right-hand side of the semi-discrete system.
+
+For a time-independent Dirichlet condition, such as $v(L,t)=0$, consistency additionally requires
+\begin{equation}
+\dot v(L,0)=0.
+\end{equation}
+The corresponding row of the initialization system is therefore replaced by this condition.
+
+The nonlinear inlet-pressure condition requires a different treatment. The prescribed total pressure is increased smoothly according to
+\begin{equation}
+p_{\mathrm{tot}}(t)
+=
+p_{eq,a}-(p_{eq,a}-p_{in})(1-e^{-t/\tau}),
+\end{equation}
+with time derivative
+\begin{equation}
+\dot p_{\mathrm{tot}}(t)
+=
+-\frac{p_{eq,a}-p_{in}}{\tau}e^{-t/\tau}.
+\end{equation}
+At the initial time this becomes
+\begin{equation}
+\dot p_{\mathrm{tot}}(0)
+=
+-\frac{p_{eq,a}-p_{in}}{\tau}.
+\end{equation}
+
+The algebraic pressure residual is
+\begin{equation}
+g_p(\rho_g,v,t)
+=
+RT\rho_g+\frac{1}{2}\rho_gv^2-p_{\mathrm{tot}}(t)=0.
+\end{equation}
+For the initial derivative to remain consistent with this constraint, its total time derivative must also vanish:
+\begin{align}
+\frac{dg_p}{dt}
+&=
+\left(RT+\frac{1}{2}v^2\right)\dot\rho_g
++\rho_gv\dot v
+-\dot p_{\mathrm{tot}}
+=0,\\
+\left(RT+\frac{1}{2}v^2\right)\dot\rho_g
++\rho_gv\dot v
+&=
+\dot p_{\mathrm{tot}}.
+\end{align}
+This equation replaces the corresponding PDE row when constructing $\dot{\mathbf u}_0$. So for the initially stationary gas, $v(0)=0$, it reduces to
+\begin{equation}
+\dot\rho_g(0)=\frac{\dot p_{\mathrm{tot}}(0)}{RT}.
+\end{equation}
+
+The resulting initialization system is solved once for $\dot{\mathbf u}_0$ before starting the IDA integration. This provides an initial derivative that is consistent with both the semi-discrete governing equations and the time-dependent algebraic boundary conditions.
+
+
+\subsubsection{Independent IMEX verification}
+
+As an independent verification of the finite-element implementation, the model was additionally integrated using the IMEX Euler method introduced previously. The linear terms are treated implicitly, while the nonlinear convection, mass transfer, and density-dependent mass matrix are evaluated using the solution at time level $n$. Equation~\eqref{eq:model_4_semi_discrete} then gives
+\begin{equation}
+M(\mathbf u^n)\frac{\mathbf u^{n+1}-\mathbf u^n}{\Delta t}
+=L\mathbf u^{n+1}+N(\mathbf u^n),
+\end{equation}
+or
+\begin{equation}\label{eq:model4_IMEX}
+\left(\frac{M(\mathbf u^n)}{\Delta t}-L\right)\mathbf u^{n+1}
+=\frac{M(\mathbf u^n)}{\Delta t}\mathbf u^n+N(\mathbf u^n).
+\end{equation}
+The IMEX implementation is not used for the primary Model~4 simulations, but provides a quick and independent check of the spatial assembly and nonlinear terms. The method however, is conditionally stable and quickly breaks down for realistic convection-dominated regimes. Therefore the validation only happens in unphysical or simplified scenarios.

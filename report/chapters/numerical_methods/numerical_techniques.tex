@@ -1,0 +1,18 @@
+\subsection{Numerical Techniques}\label{subsec:numerical_techniques}
+For easy following of the coming section I wanted to discuss a few numerical techniques that are used in the coming sections. These techniques are not unique to the methods discussed in this thesis, but are often used in numerical methods. The biggest problem in numerical methods is calculating the linear system of equations in the form:
+
+\begin{equation}\label{eq:num_linear_system}
+    A\mathbf{x} = \mathbf{b},
+\end{equation}
+where $A$ is a matrix, $\mathbf{x}$ is the unknown vector, and $\mathbf{b}$ is the known vector. The simplest way of calculating $\mathbf{x}$ seems to be to calculate the inverse of $A$, and then multiply it with $\mathbf{b}$, however this is not often a good idea, since it is expensice and can lead to numerical instabilities. The course at the TU Delft Scientific Computing\cite{ScientificComputing} spends a big chunk of time on this topic, and I will summarize the Conjugate Gradient method, LU decomposition, and the krylov subspace method, since these may be relevant to our further calculations. 
+
+In these applications and other problems we also encounter the problem of calculating the derivative of a multivariable function $f(\mathbf{x})$ with respect to the vector $\mathbf{x}$. This is often done using the Jacobian matrix, which is defined as:
+\begin{equation}\label{eq:num_jacobian}
+    J(\mathbf{x}) = \frac{\partial f(\mathbf{x})}{\partial \mathbf{x}} = 
+    \begin{bmatrix}
+        \frac{\partial f_1(\mathbf{x})}{\partial x_1} & \cdots & \frac{\partial f_1(\mathbf{x})}{\partial x_n} \\
+        \vdots & \ddots & \vdots \\
+        \frac{\partial f_m(\mathbf{x})}{\partial x_1} & \cdots & \frac{\partial f_m(\mathbf{x})}{\partial x_n}
+    \end{bmatrix},
+\end{equation}
+where $f(\mathbf{x}) = [f_1(\mathbf{x}), \ldots, f_m(\mathbf{x})]^T$ is a vector-valued function and $\mathbf{x} = [x_1, \ldots, x_n]^T$ is a vector of variables. To calculate the Jacobian we can expensively calculate the partial derivatives, but there are better ways of doing this, as used in Julia's automatic differentiation packages[SOURCE]. We will be discussing some of these methods shortly in this section.

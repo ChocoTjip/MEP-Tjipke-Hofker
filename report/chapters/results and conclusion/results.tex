@@ -1,7 +1,7 @@
 \section{Results and Discussion}\label{sec:results}
 Ik ben nog niet blij met dit gedeelte, maar ik heb het even zo gelaten. Wil graag andere plotjes maken voor de resultaten, heb tot nu toe alleen de mooie gifjes, maar die kunnen natuurlijk niet in de rapportage. Wil binnenkort alles opnieuw runnen en dan measures maken voor bijvoorbeeld percentage opgenomen waterstof, en dan een plotje maken van de hoeveelheid opgenomen waterstof in de tijd. Dat is denk ik een mooi resultaat. Doet Darcy ook. Maar voor nu snapshots van de plotjes:
 
-\subsection*{Model 1}
+\subsection{Model 1}
 We ran the first model 4 times. Twice for absorption, where in one iteration we assumed a constant gas density, and in the other iteration we assumed a variable gas density. The results of these two iterations are shown in Figure~\ref{fig:model1_absorption_comparison_absorption}. The numerical solution is compared with the analytical solution for the constant gas density case, and the solid density and gas density are shown for the variable gas density case. We applied the same two iterations for desorption, and the results are shown in Figure~\ref{fig:model1_absorption_comparison_desorption}. 
 
 As we see the cases where the case where we have an analytical solution, the numerical solution matches the analytical solution very well. The cases where we have a variable gas density show that the gas density decreases over time, while the solid density increases over time. For absorption with a constant gas density, we see that the battery is fully saturated (has a filled fraction larger then $0.999$) after $xxx$ seconds, while for absorption with a variable gas density, we see that the battery is fully saturated after $xxx$ seconds. For desorption with a constant gas density, we see that the battery is fully desaturated (has a filled fraction smaller then $0.001$) after $xxx$ seconds, while for desorption with a variable gas density, we see that the battery is fully desaturated after $xxx$ seconds. 
@@ -65,10 +65,10 @@ Lastly we made a plot of the time step size of the automatic solver for model 1.
     |d\mathbf{u}/dt|$ becomes smaller and smaller.}\label{fig:model_1_variable_gas_desorption}
 \end{figure}
 
-\subsection*{Model 2}
-For model 2 we first use a variable set with low Peclet number. This is less realistic, but it is a good test case to see if the model works.
+\subsection{Model 2}
+For model 2 we first use a variable set with low P\'eclet number. This is less realistic, but it is a good test case to see if the model works.
 
-Figure~\ref{fig:model2_peclet_comparison} compares snapshots of the gas and solid densities at $t=0.5s$ for two different Peclet numbers. In both cases, $v=1.0m/s$ and $h=0.01m$. In Figure~\ref{fig:model2_low_peclet}, the diffusion coefficient is $\mu=0.01m^2/s$, corresponding to $\mathrm{Pe}=1.0$. The gas-density profile remains smooth, while the solid density increases in the regions where the gas density is higher. Figure~\ref{fig:model2_high_peclet} shows the result for $\mu=10^{-5}$, corresponding to $\mathrm{Pe}=1000$, with the DAE time integration. At this high Peclet number, oscillations appear in the gas-density solution because SUPG stabilization has not yet been applied. Since the IMEX method uses the, in this model, convection term as fully implicit it does not seem to create oscillations.
+Figure~\ref{fig:model2_peclet_comparison} compares snapshots of the gas and solid densities at $t=0.5s$ for two different P\'eclet numbers. In both cases, $v=1.0m/s$ and $h=0.01m$. In Figure~\ref{fig:model2_low_peclet}, the diffusion coefficient is $\mu=0.01m^2/s$, corresponding to $\mathrm{Pe}=1.0$. The gas-density profile remains smooth, while the solid density increases in the regions where the gas density is higher. Figure~\ref{fig:model2_high_peclet} shows the result for $\mu=10^{-5}$, corresponding to $\mathrm{Pe}=1000$, with the DAE time integration. At this high P\'eclet number, oscillations appear in the gas-density solution because SUPG stabilization has not yet been applied. Since the IMEX method uses the, in this model, convection term as fully implicit it does not seem to create oscillations.
 
 \begin{figure}[htbp]
 \centering
@@ -85,18 +85,18 @@ Figure~\ref{fig:model2_peclet_comparison} compares snapshots of the gas and soli
 \caption{Result for $\mathrm{Pe}=1000$, with $v=1.0$, $h=0.01$, and $\mu=10^{-5}$.}
 \label{fig:model2_high_peclet}
 \end{subfigure}
-\caption{Gas and solid densities at $t=0.5$ for low and high Peclet numbers.}
+\caption{Gas and solid densities at $t=0.5$ for low and high P\'eclet numbers.}
 \label{fig:model2_peclet_comparison}
 \end{figure}
 
-Figure~\ref{fig:model2_saturation_comparison} shows the evolution of the solid saturation at different positions in the domain, together with the spatially averaged saturation. For the low-Peclet-number case with non-realistic parameter values, shown in Figure~\ref{fig:model2_low_pe_dae}, the saturation at the inlet follows the analytical solution from Model~1 for a constant gas density. This happens because the gas density at the inlet is our constant boundary condition, and it therefor acts as a Model~1 with constant gas density. The saturation at $x=L$ responds later, while the average saturation remains between the inlet and outlet values. With the realistic parameters and SUPG stabilization, shown in Figure~\ref{fig:model2_realistic_dae_supg}, the filling time increases from approximately $3s$ to approximately $200s$. The saturation curves at the different positions are then nearly identical. This is because, although the velocity is only $v=0.1m/s$, the gas fills the metre long domain in approximately $10s$, which is much shorter than the characteristic absorption time. Thus, the gas density becomes distributed throughout the domain before a substantial amount of gas is absorbed, and Model~1 provides a reasonable approximation for this case. Initially, this might seem like the gas velocity has little impact. However, it is important to note that temperature has not yet been included. Absorption generates heat, and the resulting temperature increase reduces the absorption rate. Because velocity transports the temperature with the gas, the velocity will play a big role if temperature is included..
+Figure~\ref{fig:model2_saturation_comparison} shows the evolution of the solid saturation at different positions in the domain, together with the spatially averaged saturation. For the low-P\'eclet-number case with non-realistic parameter values, shown in Figure~\ref{fig:model2_low_pe_dae}, the saturation at the inlet follows the analytical solution from Model~1 for a constant gas density. This happens because the gas density at the inlet is our constant boundary condition, and it therefor acts as a Model~1 with constant gas density. The saturation at $x=L$ responds later, while the average saturation remains between the inlet and outlet values. With the realistic parameters and SUPG stabilization, shown in Figure~\ref{fig:model2_realistic_dae_supg}, the filling time increases from approximately $3s$ to approximately $200s$. The saturation curves at the different positions are then nearly identical. This is because, although the velocity is only $v=0.1m/s$, the gas fills the metre long domain in approximately $10s$, which is much shorter than the characteristic absorption time. Thus, the gas density becomes distributed throughout the domain before a substantial amount of gas is absorbed, and Model~1 provides a reasonable approximation for this case. Initially, this might seem like the gas velocity has little impact. However, it is important to note that temperature has not yet been included. Absorption generates heat, and the resulting temperature increase reduces the absorption rate. Because velocity transports the temperature with the gas, the velocity will play a big role if temperature is included..
 
 \begin{figure}[htbp]
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
 \centering
 \includegraphics[width=\textwidth]{figures/model_2_result_low_Pe_DAE.png}
-\caption{Solid saturation at different positions for the low-Peclet-number case with non-realistic parameter values.}
+\caption{Solid saturation at different positions for the low-P\'eclet-number case with non-realistic parameter values.}
 \label{fig:model2_low_pe_dae}
 \end{subfigure}
 \hfill
@@ -113,7 +113,7 @@ Figure~\ref{fig:model2_saturation_comparison} shows the evolution of the solid s
 \clearpage
 \newpage
 
-\subsection*{Model 3}
+\subsection{Model 3}
 The results of this model after one second are shown in Figure~\ref{fig:model_3_result}.
 
 \begin{figure}
@@ -122,22 +122,74 @@ The results of this model after one second are shown in Figure~\ref{fig:model_3_
     \caption{Result of model 3 at time $t=1$}\label{fig:model_3_result}
 \end{figure}
 
-\subsection*{Model 4}
-For the IMEX scheme we have visualized our results in Figure~\ref{fig:model_4_IMEX}, and for the Finite Difference scheme in Figure~\ref{fig:model_4_FD}. The results are similar, but the IMEX scheme is more stable and allows for larger time steps. The Finite Difference scheme requires smaller time steps to maintain stability, which can lead to longer computation times. Overall, the IMEX scheme provides a more efficient and robust solution for this model.
+\subsection{Model 4}
 
-The result for applying total pressure is shown in Figure~\ref{fig:model_4_FD_ptot}. The total pressure is calculated using the formula above, and it shows how the pressure varies along the length of the battery at a specific time. The results indicate that the pressure is highest at the inlet and decreases towards the outlet, which is consistent with the expected behavior of the system.
+For validation of the numerical implementation, three discretizations of the same governing equations were constructed. Two models use the finite-element spatial discretization derived above, of which one is integrated using the IMEX scheme and the other using the IDA implementation with the analytically constructed Jacobian. In addition, an independent finite-difference implementation was developed for comparison.
 
-\begin{figure}
-    \centering \includegraphics[width=.8\textwidth]{figures/model_4_result_IMEX.png}
-    \caption{Results of the IMEX scheme at $t=1.5$.}\label{fig:model_4_IMEX}
+At relatively low P\'eclet numbers, no significant difference is observed between the FEM solutions obtained with IMEX and IDA. This indicates that both time-integration methods correctly reproduce the solution when diffusion is sufficiently strong relative to convection. For increasingly convection-dominated cases, however, the IDA implementation was found to remain more robust, whereas the IMEX method becomes more restrictive.
+
+Figure~\ref{fig:model_4_validation} compares the FEM-IMEX solution with the independently implemented finite-difference solution for a low-P\'eclet-number case. The two methods show close agreement. A small difference can be observed in the finite-difference solution, which is likely caused by the additional numerical diffusion introduced by the upwind discretization of the convective terms. This artificial diffusion smooths steep spatial gradients and therefore slightly modifies the solution even when both discretizations approximate the same governing equations.
+
+\begin{figure}[ht]
+\centering
+\begin{subfigure}[t]{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/model_4_result_IMEX.png}
+\caption{Finite-element solution using the IMEX scheme.}
+\label{fig:model_4_IMEX}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/model_4_FD.png}
+\caption{Finite-difference solution using an upwind discretization.}
+\label{fig:model_4_FD}
+\end{subfigure}
+\caption{Comparison of the FEM-IMEX and finite-difference solutions at $t=1.5$ for a relatively low-P\'eclet-number case.}
+\label{fig:model_4_validation}
 \end{figure}
 
-\begin{figure}
-    \centering \includegraphics[width=.8\textwidth]{figures/model_4_FD.png}
-    \caption{Results of the Finite Difference scheme at $t=1.5$.}\label{fig:model_4_FD}
+For realistic values we again see a quick filling of the battery leading to a fill rate almost entirely desided by the speed of a perfectly mixed reactor. Snapchats from this run are shown in Figure~\ref{fig:model4_solution}. We see again that the gas fills up in the battery way quicker than the solid, and thus the solid fill rate looks again like it would in a perfectly stirred reactor. This is also visualized in Figure~\ref{fig:model_4_fr}. Here the differences on the x-sclaes really show the difference in gas fillup of the battery and solid absorption.
+
+
+\begin{figure}[ht]
+\centering
+
+\begin{subfigure}[t]{0.49\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/model_4_density_snapshot.png}
+\caption{Gas and solid hydrogen density.}
+\label{fig:model4_density}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.49\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/model_4_velocity_snapshot.png}
+\caption{Hydrogen velocity.}
+\label{fig:model4_velocity}
+\end{subfigure}
+
+\caption{Snapchat from model 4 solution at 1ms, with realistic values and therefore also a high P\'eclet number.}
+\label{fig:model4_solution}
 \end{figure}
 
-\begin{figure}
-    \centering \includegraphics[width=.8\textwidth]{figures/model_4_FD_ptot.png}
-    \caption{Results of the Finite Difference scheme with total pressure at $t=1.5$.}\label{fig:model_4_FD_ptot}
+\begin{figure}[ht]
+\centering
+
+\begin{subfigure}[t]{0.49\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/model_4_gas_fill_rate.png}
+\caption{Gas fill rate of the battery. The battery fills with gas in approximately $10 ms$.}
+\label{fig:model_4_gfr}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.49\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/model_4_solid_fill_rate.png}
+\caption{Solid fill rate of the battery. The solid fills the battery in approximately $100s$.}
+\label{fig:model_4_sfr}
+\end{subfigure}
+
+\caption{Model 4 solution at the selected time, with realistic values and therefore also a high P\'eclet number.}
+\label{fig:model_4_fr}
 \end{figure}

@@ -129,9 +129,9 @@ if we discretize and apply IMEX methods (now a combination between implicit and 
 
 Where we have again:
 
-\begin{equation*}
-M_{ij}=\int \psi^i\psi^j dx,\\
-C_{ij}=\int (\mathbf{v}\cdot\nabla\psi^i)\psi^j \,dx,\\
-K_{ij}=\int (\nabla \cdot \psi^i)(\nabla \cdot \psi^j)\, dx \\
-A_{ij}=M_{ij}+\big( K_{ij}+C_{ij}\big) \Delta t
-\end{equation*}
+\begin{align*}
+M_{ij}&=\int \psi^i\psi^j dx,\\
+C_{ij}&=\int (\mathbf{v}\cdot\nabla\psi^i)\psi^j \,dx,\\
+K_{ij}&=\int (\nabla \cdot \psi^i)(\nabla \cdot \psi^j)\, dx \\
+A_{ij}&=M_{ij}+\big( K_{ij}+C_{ij}\big) \Delta t
+\end{align*}

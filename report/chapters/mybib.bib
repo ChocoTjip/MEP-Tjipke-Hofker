@@ -14,8 +14,7 @@
    year = {2016}
 }
 
-
-@techReport{Sandrock1999,
+@article{Sandrock1999,
    abstract = {This is a broad historical and property-related review of the extraordinary variety of hydriding alloys that have been developed. The principal focus is on reactions of alloys with gaseous H and their important H-capacity and PCT (pressure-composition-temperature) 2 properties. However, there are a number of important secondary properties that must also be considered: activation, decrepitation, H 2 absorption / desorption kinetics, impurity effects, cyclic stability, safety, raw materials cost and ease of manufacture, among others. The main part of this survey will cover the families of alloys that will reversibly store H at temperatures of 0-1008C and pressures of 1-10 2 atm absolute, ranges useful to many applications. Alloys include solid solutions and intermetallic compounds of the generic families AB , 5 AB , AB, A B, among others. Conventional alloys are reaching thermodynamic limits in PCT and H-capacity. Near-term R&D is likely 2 2 to focus new directions toward the areas of catalyzed complex hydrides and carbon.},
    author = {Gary Sandrock},
    journal = {Journal of Alloys and Compounds},
@@ -26,7 +25,36 @@
    year = {1999}
 }
 
-@techReport{Jemni1995,
+@article{hindmarsh2005sundials,
+  title={{SUNDIALS}: Suite of nonlinear and differential/algebraic equation solvers},
+  author={Hindmarsh, Alan C and Brown, Peter N and Grant, Keith E and Lee, Steven L and Serban, Radu and Shumaker, Dan E and Woodward, Carol S},
+  journal={ACM Transactions on Mathematical Software},
+  volume={31},
+  number={3},
+  pages={363--396},
+  year={2005},
+  publisher={ACM},
+  doi={10.1145/1089014.1089020}
+}
+
+@misc{sundials_ida_math,
+  author={{SUNDIALS Development Team}},
+  title={{IDA}: Mathematical Considerations},
+  year={2026},
+  url={https://sundials.readthedocs.io/en/latest/ida/Mathematics_link.html},
+  note={Accessed: 2026-09-09}
+}
+
+
+@misc{sciml_daeproblem,
+  author={{SciML Development Team}},
+  title={{DAE Problems} -- DifferentialEquations.jl Documentation},
+  year={2026},
+  url={https://docs.sciml.ai/DiffEqDocs/stable/types/dae_types/},
+  note={Accessed: 2026-09-10}
+}
+
+@article{Jemni1995,
    abstract = {k m M a P, Rs R R, S T t V ht. Abstract-A study of a two-dimensional dynamic heat and mass transfer in a metal-hydrogen reactor is presented in this paper. A mathematical model has been established and solved numerically by the method of the finite domains. The numerical simulation is used to present the time-space evolution of the temperature, the pressure and the hydride density in the reactor and to determine the sensitivity to some parameters (reactor geometry, inlet pressure, and inlet temperature). This simulation permits us also to study the effect of certain reduction in the model and the vahdity of the local thermal equilibrium assumption. NOMENCLATURE Specific heat (J kg-' K-') Particle diameter (m) Activation energy (J mole-') Conductance between hydride bed and cooling fluid (W rn-' K-') Reactor height (m) Heat coefficient exchange between solid and gas Wm 1-2 K-1 Hydrogen to metal atomic ratio Permeability (m') Hydrogen mass absorbed (kg mm3 s-l) Molecular weight (kg/mole) Normal vector Pressure (Pa) Prandtl number Universal gas constant (J mole-' K-') Reactor ray (m) Reynolds number Solid-gas exchange area (m2 mm3) Temperature (K) Time (s) Gas velocity (m s-') Greek letters AH" Reaction heat of formation (J kg-') Ar Thickness of control volume (m) At Time increment (s) AZ Thickness of control volume (m) t Porosity Thermal conductivity (W m-i K-') P Dynamic viscosity (kg m-' s-') P Density (kg m-') V Kinematic viscosity (m' s-') w Averaging volume (m3)},
    author = {A Jemni and S Ben Nasrallah},
    issue = {1},
@@ -91,6 +119,14 @@
   note         = {Course materials and lecture notes}
 }
 
+@misc{ScientificComputing,
+  author       = {C. Vuik and D.J.P Laheye},
+  title        = {Scientific Computing (WI4201)},
+  year         = {2019},
+  institution  = {Delft University of Technology},
+  note         = {Course materials and lecture notes}
+}
+
 @book{Nield2017,
   author    = {Nield, Donald A. and Bejan, Adrian},
   title     = {Convection in Porous Media},
@@ -119,6 +155,25 @@
   doi       = {10.1007/978-3-319-99693-6}
 }
 
+@article{geuzaine2009gmsh,
+  title={Gmsh: A three-dimensional finite element mesh generator with built-in pre- and post-processing facilities},
+  author={Geuzaine, Christophe and Remacle, Jean-Francois},
+  journal={International Journal for Numerical Methods in Engineering},
+  volume={79},
+  number={11},
+  pages={1309--1331},
+  year={2009},
+  publisher={John Wiley and Sons},
+  doi={10.1002/nme.2579}
+}
+
+@misc{gmsh_manual,
+  author={Geuzaine, Christophe and Remacle, Jean-Francois},
+  title={Gmsh Reference Manual and Tutorial},
+  year={2026},
+  url={https://gmsh.info/doc/texinfo/gmsh.html},
+  note={Accessed: 2026-09-09}
+}
 
 # below moet ik nog siten maar dat moest van https://github.com/SciML/Sundials.jl
 
@@ -141,13 +196,3 @@
   doi={10.1145/3539801}
 }
 
-@article{hindmarsh2005sundials,
-  title={{SUNDIALS}: Suite of nonlinear and differential/algebraic equation solvers},
-  author={Hindmarsh, Alan C and Brown, Peter N and Grant, Keith E and Lee, Steven L and Serban, Radu and Shumaker, Dan E and Woodward, Carol S},
-  journal={ACM Transactions on Mathematical Software (TOMS)},
-  volume={31},
-  number={3},
-  pages={363--396},
-  year={2005},
-  publisher={ACM}
-}
