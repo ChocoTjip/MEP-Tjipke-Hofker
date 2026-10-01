@@ -1,18 +1,43 @@
 \subsection{Numerical Techniques}\label{subsec:numerical_techniques}
-For easy following of the coming section I wanted to discuss a few numerical techniques that are used in the coming sections. These techniques are not unique to the methods discussed in this thesis, but are often used in numerical methods. The biggest problem in numerical methods is calculating the linear system of equations in the form:
+
+Before introducing the numerical models, a few numerical techniques that are used throughout this thesis are briefly discussed. These techniques are not specific to the methods developed here, but occur throughout scientific computing. One of the central computational problems is solving a linear system of the form
 
 \begin{equation}\label{eq:num_linear_system}
-    A\mathbf{x} = \mathbf{b},
+A\mathbf{x} = \mathbf{b},
 \end{equation}
-where $A$ is a matrix, $\mathbf{x}$ is the unknown vector, and $\mathbf{b}$ is the known vector. The simplest way of calculating $\mathbf{x}$ seems to be to calculate the inverse of $A$, and then multiply it with $\mathbf{b}$, however this is not often a good idea, since it is expensice and can lead to numerical instabilities. The course at the TU Delft Scientific Computing\cite{ScientificComputing} spends a big chunk of time on this topic, and I will summarize the Conjugate Gradient method, LU decomposition, and the krylov subspace method, since these may be relevant to our further calculations. 
 
-In these applications and other problems we also encounter the problem of calculating the derivative of a multivariable function $f(\mathbf{x})$ with respect to the vector $\mathbf{x}$. This is often done using the Jacobian matrix, which is defined as:
-\begin{equation}\label{eq:num_jacobian}
-    J(\mathbf{x}) = \frac{\partial f(\mathbf{x})}{\partial \mathbf{x}} = 
-    \begin{bmatrix}
-        \frac{\partial f_1(\mathbf{x})}{\partial x_1} & \cdots & \frac{\partial f_1(\mathbf{x})}{\partial x_n} \\
-        \vdots & \ddots & \vdots \\
-        \frac{\partial f_m(\mathbf{x})}{\partial x_1} & \cdots & \frac{\partial f_m(\mathbf{x})}{\partial x_n}
-    \end{bmatrix},
+where $A$ is a known matrix, $\mathbf{x}$ is the unknown vector, and $\mathbf{b}$ is a known vector. Formally, the solution could be written as $\mathbf{x}=A^{-1}\mathbf{b}$. In numerical computations, however, the inverse of $A$ is generally not calculated explicitly. Instead, a linear solver is used to solve the system directly. Different approaches exist, including direct methods such as LU decomposition and iterative methods based on Krylov subspaces. These methods, their computational costs, and numerical properties are discussed in the TU Delft course Scientific Computing \cite{ScientificComputing} and will therefore not be treated in detail here.
+
+An important property of the systems arising from the finite element discretizations in this thesis is that the matrices are sparse. Although the matrices can contain many rows and columns, each degree of freedom only interacts with a relatively small number of neighbouring degrees of freedom. Consequently, most entries of the resulting matrices are zero. Sparse linear solvers exploit this structure and avoid storing and operating on all zero entries.
+
+For the IDA time-integration method used later in this thesis, the KLU linear solver is used. During the Newton iterations performed by IDA, a sparse linear system of the form
+
+\begin{equation}
+A\Delta\mathbf{u}=\mathbf{b}
 \end{equation}
-where $f(\mathbf{x}) = [f_1(\mathbf{x}), \ldots, f_m(\mathbf{x})]^T$ is a vector-valued function and $\mathbf{x} = [x_1, \ldots, x_n]^T$ is a vector of variables. To calculate the Jacobian we can expensively calculate the partial derivatives, but there are better ways of doing this, as used in Julia's automatic differentiation packages[SOURCE]. We will be discussing some of these methods shortly in this section.
+
+has to be solved repeatedly, where in the IDA method $A$ corresponds to the iteration matrix constructed from the Jacobian, and $b$ is the residual (with a minus sign). KLU is a sparse direct solver based on LU factorization \cite{davis2010klu}. In its simplest form, an LU factorization decomposes a matrix as
+
+\begin{equation}
+A=LU,
+\end{equation}
+
+where $L$ is lower triangular and $U$ is upper triangular. For a sparse matrix, however, directly applying this factorization can generate many additional non-zero entries in $L$ and $U$, known as \emph{fill-in}. KLU therefore first reorders the rows and columns of the system. The factorization can schematically be written as
+
+\begin{equation}
+PAQ=LU,
+\end{equation}
+
+where $P$ and $Q$ are permutation matrices. KLU can use a block triangular form (BTF) decomposition and ordering algorithms such as AMD or COLAMD to find an ordering that reduces the computational cost and the amount of fill-in \cite{davis2010klu}.
+
+Once the factorization has been obtained, the original system $A\mathbf{x}=\mathbf{b}$ can be solved using two triangular systems. Using the factorization above, this can be written schematically as
+
+\begin{align}
+L\mathbf{y} &= P\mathbf{b}, \\
+U\mathbf{z} &= \mathbf{y}, \\
+\mathbf{x} &= Q\mathbf{z}.
+\end{align}
+
+The first system is solved by forward substitution and the second by backward substitution. This avoids explicitly calculating $A^{-1}$.
+
+The KLU procedure can therefore roughly be divided into three operations. First, a \emph{symbolic analysis} determines the sparsity structure and suitable matrix ordering. In the KLU library this is performed by functions such as \texttt{klu\_analyze}. Second, the numerical values are factorized into sparse $L$ and $U$ factors using \texttt{klu\_factor}. Finally, the resulting factors are used by \texttt{klu\_solve} to solve the linear system. The separation between symbolic analysis and numerical factorization is useful when matrices with the same or similar sparsity structure have to be solved repeatedly, as occurs during the time integration of a finite element system.

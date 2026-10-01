@@ -53,6 +53,32 @@ where $A$ is the matrix representing the finite difference approximation of the 
 \end{equation}
 for the boundary points corresponding to $i = 0, N$ we can use Dirichlet boundary conditions, where we set the values of $u(x_0, t)$ and $u(x_{N}, t)$ to be constant. This leads to a semi-discrete system of ODEs that can be solved using time integration methods as discussed in Section~\ref{subseq:time_integrations}.
 
+\subsubsection{Nonlinear problems}
+\label{subsubsec:num_fd_nonlinear}
+
+Finite differences can also be applied to nonlinear differential equations. The spatial derivatives are approximated in the same way as for linear problems, but nonlinear terms are evaluated using the current values of the solution. As an example, consider the nonlinear convection term
+
+\begin{equation}
+u\frac{\partial u}{\partial x}.
+\end{equation}
+
+Using a central finite-difference approximation, this term at grid point $i$ can be written as
+
+\begin{equation}
+u_i\frac{u_{i+1}-u_{i-1}}{2\Delta x}.
+\end{equation}
+
+The finite-difference approximation itself is therefore unchanged, but its coefficients now depend on the unknown solution $u_i$. Consequently, the resulting discrete system can generally be written as
+
+\begin{equation}
+\dot{\mathbf{u}} = f(\mathbf{u}),
+\end{equation}
+
+rather than as a linear system with a constant matrix.
+
+Thus, applying finite differences to a nonlinear problem does not require a different approximation of the derivatives. The main difference is that the discretized operators must be updated as the solution changes.
+
+
 \subsubsection{Upwind Methods}
 
 The above method often leads to numerical oscillations in the solutions if we are working with advective problems. These are due to the use of central differences at the boundaries and discontinuities in the solution. If you take for example a simple advection equation:

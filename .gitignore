@@ -6,6 +6,10 @@
 /Swayam
 /update meetings
 
+#venv
+.pyvenv/
+.vscode/
+
 # ParaView / VTK output files
 *.vtu
 *.pvd
@@ -26,3 +30,4 @@ old/
 
 # Large generated solution files
 *.jld2
+*.jls

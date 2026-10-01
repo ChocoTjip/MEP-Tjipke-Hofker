@@ -24,13 +24,13 @@ Where $\rho_{g,eq}$ is the equilibrium for either absorption or desorption (depe
 We write the densities and mass absorption as sums of $N$ finite element base functions:
 \begin{equation*}
 \begin{aligned}
-\rho_g&=\sum_{i=1}^{N}{\rho_g^{i}\psi^i},\\
-\rho_s&=\sum_{i=1}^{N}{\rho_s^{i}\psi^i},
+\rho_g(x, t)&=\sum_{i=1}^{N}{\rho_g^{i}(x)\psi^i(t)},\\
+\rho_s(x, t)&=\sum_{i=1}^{N}{\rho_s^{i}(x)\psi^i(t)},
 \end{aligned}
 \end{equation*}
 We will define the control vector $\mathbf{u}$ as:
 \begin{equation}
-    \mathbf{u} = \begin{pmatrix}
+    \mathbf{u}(t) = \begin{pmatrix}
         \rho_g^1 \\ 
         \vdots \\
         \rho_g^N \\
@@ -41,47 +41,47 @@ We will define the control vector $\mathbf{u}$ as:
 \end{equation}
 
 \subsubsection*{Moment}
-In Galerkin Finite Element Methods, we start by multiplying each part with a test function that is equal to one of our finite element base function $\psi^j$. Then we integrate over the entire domain. If we do this with each $j\in[0,\ldots,N]$ we get a system of equations that we can use to solve fot our control vector. If we do these steps for the first terms with partial derivatives with respect to $t$, we get:
+In Galerkin Finite Element Methods, we start by multiplying each part with a test function that is equal to one of our finite element base function $\psi^j$. Then we integrate over the entire domain. If we do this with each $j\in[0,\ldots,N]$ we get a system of equations that we can use to solve fot our control vector. If we do these steps for the first terms with derivatives with respect to $t$ (written as $\dot{\rho}_g$ and $\dot{\rho}_s$), we get:
 \begin{equation*}
     \begin{aligned}
-        \int \psi^j (\partial_t\rho_g) dx &= \int \psi^j \partial_t\left(\sum_i \rho_g^i\psi^i\right) dx \\
-        &= \sum_i \left[ \int \psi^j \psi^i dx \,(\partial_t\rho_g^i) \right]\\
+        \int \psi^j (\dot{\rho}_g) dx &= \int \psi^j \frac{d}{dt}\left(\sum_i \rho_g^i\psi^i\right) dx \\
+        &= \sum_i \left[ \int \psi^j \psi^i dx \,(\dot{\rho}_g^i) \right]\\
         &= \bigg(\begin{matrix}
             \int \psi^j \psi^i dx & \cdots & \int \psi^j \psi^N dx
         \end{matrix}\bigg)
         \begin{pmatrix}
-            \partial_t\rho_g^1 \\ 
+            \dot{\rho}_g^1 \\ 
             \vdots \\ 
-            \partial_t\rho_g^N
+            \dot{\rho}_g^N
         \end{pmatrix}\\
         \implies \begin{pmatrix}
-            \int \psi^1 \partial_t\rho_g \,dx \\
+            \int \psi^1 \dot{\rho}_g \,dx \\
             \vdots \\
-            \int \psi^N \partial_t\rho_g \,dx
+            \int \psi^N \dot{\rho}_g \,dx
         \end{pmatrix}
-        &= M_{\rho}(\partial_t\boldsymbol{\rho}_g)
+        &= M_{\rho}(\dot{\boldsymbol{\rho}}_g)
     \end{aligned}
 \end{equation*}
 where:
 \begin{equation*}
     M^\rho_{ij}=\int\psi^i\psi^j\,dx
 \end{equation*}
-the exact same steps can be taken for the term $\partial_t\rho_s$ giving:
+the exact same steps can be taken for the term $\dot{\rho}_s$ giving:
 \begin{equation*}
             \begin{pmatrix}
-            \int \psi^1 (\partial_t\rho_s) \,dx \\
+            \int \psi^1 (\dot{\rho}_s) \,dx \\
             \vdots \\
-            \int \psi^N (\partial_t\rho_s) \,dx
+            \int \psi^N (\dot{\rho}_s) \,dx
         \end{pmatrix}
-        = M_{\rho_s}(\partial_t\boldsymbol{\rho}_s) \qquad \text{with } M^{\rho_s}_{ij}=\int\psi^i\psi^j\,dx
+        = M_{\rho_s}(\dot{\boldsymbol{\rho}}_s) \qquad \text{with } M^{\rho_s}_{ij}=\int\psi^i\psi^j\,dx
 \end{equation*}
 and combining both gives:
 \begin{equation*}
     \begin{pmatrix}
         M^\rho & 0 \\ 0 & M^{\rho_s}
     \end{pmatrix}\begin{pmatrix}
-        \partial_t\boldsymbol{\rho}_g \\ \partial_t\boldsymbol{\rho}_s
-    \end{pmatrix} = M(\partial_t\mathbf{u})
+        \dot{\boldsymbol{\rho}}_g \\ \dot{\boldsymbol{\rho}}_s
+    \end{pmatrix} = M(\dot{\mathbf{u}})
 \end{equation*}
 with $M:=\begin{pmatrix}
         M^\rho & 0 \\ 0 & M^{\rho_s}
@@ -172,13 +172,13 @@ Now if we combine all previous results together we get:
 
 \begin{equation}
     \begin{aligned}
-        M^\rho \partial_t\boldsymbol{\rho}&=(DK-C)\mathbf{u}-\mathbf{b} \\
-        M^{\rho_s}\partial_t\boldsymbol{\rho_s} &= \mathbf{b}
+        M^\rho \dot{\boldsymbol{\rho}}&=(DK-C)\mathbf{u}-\mathbf{b} \\
+        M^{\rho_s}\dot{\boldsymbol{\rho_s}} &= \mathbf{b}
     \end{aligned}
 \end{equation}
 which can be combined into:
 \begin{equation}
-    M(\partial_t\mathbf{u})=L\mathbf{u}+N(u)
+    M(\dot{\mathbf{u}})=L\mathbf{u}+N(u)
 \end{equation}
 Here $L=\begin{pmatrix}
 DK-C & 0 \\ 0 & 0

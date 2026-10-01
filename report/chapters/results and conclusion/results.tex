@@ -114,7 +114,7 @@ Figure~\ref{fig:model2_saturation_comparison} shows the evolution of the solid s
 \newpage
 
 \subsection{Model 3}
-The results of this model after one second are shown in Figure~\ref{fig:model_3_result}.
+The results of this model after one second are shown in Figure~\ref{fig:model_3_result}. Here you see in a colormap
 
 \begin{figure}
     \centering
@@ -149,7 +149,7 @@ Figure~\ref{fig:model_4_validation} compares the FEM-IMEX solution with the inde
 \label{fig:model_4_validation}
 \end{figure}
 
-For realistic values we again see a quick filling of the battery leading to a fill rate almost entirely desided by the speed of a perfectly mixed reactor. Snapchats from this run are shown in Figure~\ref{fig:model4_solution}. We see again that the gas fills up in the battery way quicker than the solid, and thus the solid fill rate looks again like it would in a perfectly stirred reactor. This is also visualized in Figure~\ref{fig:model_4_fr}. Here the differences on the x-sclaes really show the difference in gas fillup of the battery and solid absorption.
+For realistic values we again see a quick filling of the battery leading to a fill rate almost entirely desided by the speed of a perfectly mixed reactor. snapshots from this run are shown in Figure~\ref{fig:model4_solution}. We see again that the gas fills up in the battery way quicker than the solid, and thus the solid fill rate looks again like it would in a perfectly stirred reactor. This is also visualized in Figure~\ref{fig:model_4_fr}. Here the differences on the x-sclaes really show the difference in gas fillup of the battery and solid absorption.
 
 
 \begin{figure}[ht]
@@ -169,7 +169,7 @@ For realistic values we again see a quick filling of the battery leading to a fi
 \label{fig:model4_velocity}
 \end{subfigure}
 
-\caption{Snapchat from model 4 solution at 1ms, with realistic values and therefore also a high P\'eclet number.}
+\caption{snapshot from model 4 solution at 1ms, with realistic values and therefore also a high P\'eclet number.}
 \label{fig:model4_solution}
 \end{figure}
 
@@ -192,4 +192,45 @@ For realistic values we again see a quick filling of the battery leading to a fi
 
 \caption{Model 4 solution at the selected time, with realistic values and therefore also a high P\'eclet number.}
 \label{fig:model_4_fr}
+\end{figure}
+
+\subsection{Model 5}
+A snapshot of the results of the fifth model is shown in Figure~\ref{fig:model5_snapshot}. The simulation was performed using the IDA time-integration method with the KLU sparse linear solver and the implemented analytical Jacobian. Checkerboard-like patterns can be observed in the velocity magnitude $|\mathbf{v}|$ and in both velocity components $v_x$ and $v_y$. These oscillations indicate that the two-dimensional formulation still suffers from numerical instability in the velocity field. Nevertheless, the overall filling behaviour of the battery remains very similar to that observed for Model~1. The gas pressure and gas density redistribute through the battery much faster than hydrogen is transferred into the metal hydride. Consequently, the solid hydrogen density remains nearly spatially uniform during most of the filling process, and the total filling curve is therefore close to that of the spatially uniform Model~1.
+
+
+\begin{figure}[ht]
+    \centering
+
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/model_5_rhog.png}
+        \caption{Gas density $\rho_g$.}
+        \label{fig:model5_rhog}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/model_5_vmag.png}
+        \caption{Velocity magnitude $|\mathbf{v}|$.}
+        \label{fig:model5_vmag}
+    \end{subfigure}
+
+    \vspace{0.3cm}
+
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/model_5_vx.png}
+        \caption{Horizontal velocity component $v_x$.}
+        \label{fig:model5_vx}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/model_5_vy.png}
+        \caption{Vertical velocity component $v_y$.}
+        \label{fig:model5_vy}
+    \end{subfigure}
+
+    \caption{Snapshot of the Model~5 solution at $t=0.1\,\mathrm{s}$.}
+    \label{fig:model5_snapshot}
 \end{figure}

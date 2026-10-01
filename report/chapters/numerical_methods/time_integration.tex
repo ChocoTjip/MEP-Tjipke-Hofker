@@ -43,7 +43,7 @@ the IMEX method becomes:
 \begin{equation}
 (M-\Delta t A)\mathbf{u}^{n+1} = M\mathbf{u}^{n} + \Delta t \mathbf{f}(\mathbf{u}^{n},t^{n}),
 \end{equation}
-which is again easily solvable. This method especially worked well in model 2 and 3, where a large part of the physics that typically cause stiffness or instability are linear, and the non-linear terms are less stiff (the absorption and desorption of the hydrogen gas).
+which is again easily solvable, since the linear part is constant throughout the simulation, and we can calculate their LU decomposition once and reuse it at every time step. This method has been used as a validation for more refined time integration methods like the ROW, and IDA as we will discuss later in this section.
 
 \subsubsection{Linear-Implicit Newton}
 
@@ -77,16 +77,18 @@ and repeat the process until convergence. If we know the Jacobian of $f$ with re
 \end{equation}
 and we can rewrite Equation~\ref{eq:num_step_update_implicit_euler} as:
 \begin{equation}
-    \mathbf{u}^{n+1}_1 = \mathbf{u}^{n+1}_0 - J_R(\mathbf{u}^{n+1}_0)^{-1} \mathbf{R}(\mathbf{u}^{n+1}_0)
+    J_R(\mathbf{u}^{n+1}_0)\delta \mathbf{u} = - \mathbf{R}(\mathbf{u}^{n+1}_0)
 \end{equation}
-now we repeat until the residual is sufficiently small, or it is sufficiently small wrt the solution. One more important note is that the time step $\Delta t$ in Equation~\ref{eq:num_jacobian_residual_implicit_euler} is often written in literature (especially literature for Julia) as $\gamma$. And the jacobian of the residual is $W$. Giving:
+Which can be solved using an appropriate linear solver. Now we repeat until the residual is sufficiently small. One more important note is that the time step $\Delta t$ in Equation~\ref{eq:num_jacobian_residual_implicit_euler} is often written in literature (especially literature for Julia) as $\gamma$. And the jacobian of the residual is $W$. Giving:
 \begin{equation}\label{eq:num_jacobian_residual_implicit_euler_gamma}
     W = M-\gamma J_f
 \end{equation}
 
+This time step can vary during the time integration as more and less change is happening between consecutive time steps. An example of how to incorporate adaptive time stepping is given in Section~\ref{subsubsec:num_adaptive_timestep}.
+
 \subsubsection{Rosenbrock--Wanner (ROW) method}\label{subsubsec:num_ROW}
 
-In the previous section we looked at implicit time integration for non-linear terms using backward Euler. Our julia solver most often uses the Rosenbrock--Wanner method, which is of the family of linearly implicit methods. The method looks at the difference between two timesteps:
+In the previous section we looked at implicit time integration for non-linear terms using backward Euler. For Models 2 and 3, a Rosenbrock--Wanner (ROW) method is used because it is well suited to stiff systems, meaning systems in which processes with strongly different time scales occur simultaneously. Such systems can force explicit methods to use very small time steps for stability. ROW methods are linearly implicit and avoid solving a fully nonlinear system at every time step, making them suitable for the semi-discrete finite element equations considered here. The method estimates the evolution over a time step through several linearly implicit stages:
 
 \begin{equation}
     k = u^{n+1} - u^n

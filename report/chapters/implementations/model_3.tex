@@ -114,7 +114,7 @@ where $M_{ji}=\int_\Omega\psi^i\psi^j\,dx$ is the mass matrix, and using the rel
 Now our semi-discrete system of equations becomes:
 \begin{equation*}
 \begin{aligned}
-    M \partial_t \mathbf{u} &= L\mathbf{u}+M\mathbf{\dot m}_h(\mathbf{u})
+    M \dot{\mathbf{u}} &= L\mathbf{u}+M\mathbf{\dot m}_h(\mathbf{u})
 \end{aligned}
 \end{equation*}
 Where $L=D K-C$ is the linear operator matrix. Now we can apply time integration methods to solve this semi-discrete system of equations, as discussed in Section~\ref{subseq:time_integrations}.

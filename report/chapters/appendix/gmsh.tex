@@ -3,7 +3,7 @@
 
 During the development of the spatial models, Gmsh was investigated as an alternative to the structured meshes used in the final implementation. Gmsh allows more flexible geometries and local control of the element size, for example by refining the mesh close to boundaries or other regions where large solution gradients are expected \cite{gmsh_manual,geuzaine2009gmsh}.
 
-Two example battery geometries were created during this investigation. The first example, shown in Figure~\ref{fig:app_gmsh_2d}, demonstrates how the metal-hydride domain can be represented using a non-uniform two-dimensional mesh. Local mesh refinement can be introduced close to the hydrogen inlet, where the largest pressure and density gradients are expected during the initial filling stage.
+Two example battery geometries were created during this investigation. The first example, shown in Figure~\ref{fig:app_gmsh_2d}, demonstrates how the metal-hydride domain can be represented using a non-uniform two-dimensional mesh. Local mesh refinement can be introduced close to the hydrogen inlet, where the largest pressure and density gradients are expected during the initial filling stage. In addition to the metal-hydride domain, a surrounding region is included that could represent a temperature-regulating material. Possible examples are a cooling or heating medium or a phase-change material such as the PCM jacket considered by Darzi et al. The separate domains could then be assigned different material properties and coupled through their common interface. Using gmsh to create meshes can also make defining different boundaries and inlets easier, since you can give nodes a keyword upon creation.
 
 \begin{figure}[ht]
 \centering
@@ -12,7 +12,7 @@ Two example battery geometries were created during this investigation. The first
 \label{fig:app_gmsh_2d}
 \end{figure}
 
-A second example is shown in Figure~\ref{fig:app_gmsh_3d}. In addition to the metal-hydride domain, a surrounding region is included that could represent a temperature-regulating material. Possible examples are a cooling or heating medium or a phase-change material such as the PCM jacket considered by Darzi et al. The separate domains could then be assigned different material properties and coupled through their common interface.
+A second example is shown in Figure~\ref{fig:app_gmsh_3d}. This example demonstrates how a three-dimensional battery geometry can be represented using a non-uniform mesh in Gmsh. Similar to the two-dimensional case, local mesh refinement can be applied near the hydrogen inlet or other regions with expected large solution gradients. The surrounding temperature-regulating material is also included and can be assigned different material properties from the metal-hydride bed.
 
 \begin{figure}[ht]
 \centering
