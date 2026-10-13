@@ -1,0 +1,4 @@
+manim
+manim_slides
+symfem
+numpy
